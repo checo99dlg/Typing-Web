@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ChecoType</title>
+    <script>
+      (() => {
+        try {
+          const storedTheme = localStorage.getItem("typing-theme");
+          const theme =
+            storedTheme === "dark" || storedTheme === "light"
+              ? storedTheme
+              : window.matchMedia("(prefers-color-scheme: dark)").matches
+                ? "dark"
+                : "light";
+          if (theme === "dark") {
+            document.documentElement.classList.add("dark");
+          }
+        } catch (error) {
+          // Ignore storage access issues and keep default theme.
+        }
+      })();
+    </script>
+    <script>
+      window.tailwind = {
+        config: {
+          darkMode: "class",
+        },
+      };
+      tailwind = window.tailwind;
+    </script>
+    <style>
+      html.dark body {
+        background-color: #0b1220;
+        color: #f8fafc;
+      }
+      html.dark .surface {
+        background-color: rgba(15, 23, 42, 0.9);
+        border-color: #1f2937;
+      }
+      html.dark .surface-input {
+        background-color: rgba(2, 6, 23, 0.6);
+        border-color: #334155;
+        color: #f8fafc;
+      }
+    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="min-h-screen bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-white">
+    <main class="mx-auto flex min-h-screen w-full max-w-6xl flex-col justify-center gap-10 px-8 py-12">
+      <div id="resultsScreen" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/60 px-6 py-10 backdrop-blur-sm">
+        <div class="surface w-full max-w-xl rounded-3xl border border-slate-200 bg-white/95 p-8 text-center shadow-xl dark:border-slate-800 dark:bg-slate-900/95">
+          <p class="text-xs uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Session Complete</p>
+          <h2 class="mt-3 text-3xl font-semibold text-slate-900 dark:text-white">Great job</h2>
+          <div class="mt-6 grid gap-4 text-left sm:grid-cols-2">
+            <div class="rounded-2xl border border-slate-200 bg-slate-100/80 p-4 dark:border-slate-800 dark:bg-slate-900">
+              <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">WPM</p>
+              <p id="resultWpm" class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">0</p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-100/80 p-4 dark:border-slate-800 dark:bg-slate-900">
+              <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Accuracy</p>
+              <p id="resultAccuracy" class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">0%</p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-100/80 p-4 dark:border-slate-800 dark:bg-slate-900">
+              <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Characters</p>
+              <p id="resultChars" class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">0</p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-100/80 p-4 dark:border-slate-800 dark:bg-slate-900">
+              <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Duration</p>
+              <p id="resultDuration" class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">0s</p>
+            </div>
+          </div>
+          <p class="mt-6 text-sm text-slate-500 dark:text-slate-400">Press Shift + Enter to start a new test.</p>
+        </div>
+      </div>
+      <header class="surface flex flex-col gap-7 rounded-3xl border border-slate-200 bg-white/80 p-10 shadow-sm md:flex-row md:items-center md:justify-between dark:border-slate-800 dark:bg-slate-900/80">
+        <div class="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
+          <button id="themeToggle" type="button" class="group relative inline-flex h-12 w-12 items-center justify-center rounded-full border border-slate-300 text-slate-700 shadow-sm transition hover:bg-white active:scale-95 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 font-semibold" aria-pressed="false" aria-label="Toggle dark mode">
+            <span class="sr-only">Toggle dark mode</span>
+            <svg id="themeIconSun" class="h-5 w-5 transition-all duration-300 group-[.is-toggling]:scale-110 group-[.is-toggling]:rotate-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+              <circle cx="12" cy="12" r="4"></circle>
+              <path d="M12 2v2"></path>
+              <path d="M12 20v2"></path>
+              <path d="M4.93 4.93l1.41 1.41"></path>
+              <path d="M17.66 17.66l1.41 1.41"></path>
+              <path d="M2 12h2"></path>
+              <path d="M20 12h2"></path>
+              <path d="M4.93 19.07l1.41-1.41"></path>
+              <path d="M17.66 6.34l1.41-1.41"></path>
+            </svg>
+            <svg id="themeIconMoon" class="absolute h-5 w-5 rotate-90 scale-0 opacity-0 transition-all duration-300 group-[.is-toggling]:scale-110 group-[.is-toggling]:-rotate-12 text-slate-800 dark:text-slate-200" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M21 14.5A8.5 8.5 0 0 1 9.5 3a7 7 0 1 0 11.5 11.5Z"></path>
+            </svg>
+          </button>
+          <div>
+            <h1 class="text-4xl font-semibold tracking-tight">ChecoType</h1>
+            <p class="mt-3 max-w-xl text-base text-slate-600 dark:text-slate-300">Randomized word tests with live accuracy and WPM tracking.</p>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-end gap-4">
+          <label class="flex flex-col gap-1 text-sm font-medium text-slate-500 dark:text-slate-300">
+            Duration (seconds)
+            <input id="durationInput" type="number" min="5" step="5" value="60" class="w-36 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 shadow-sm focus:border-slate-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-slate-400" />
+          </label>
+          <label class="flex items-center gap-2 text-sm font-medium text-slate-500 dark:text-slate-300">
+            <input id="infiniteToggle" type="checkbox" class="h-4.5 w-4.5 rounded border-slate-300 text-slate-900 focus:ring-slate-500 dark:border-slate-600 dark:focus:ring-slate-400" />
+            Infinite
+          </label>
+          <button id="startBtn" class="rounded-full bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white shadow hover:bg-slate-800 dark:bg-slate-200 dark:text-slate-950 dark:hover:bg-white">Start</button>
+          <button id="resetBtn" class="rounded-full border border-slate-300 px-6 py-2.5 text-sm font-semibold text-slate-700 hover:bg-white dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">Reset</button>
+        </div>
+      </header>
+
+      <section class="grid gap-5 md:grid-cols-4">
+        <div class="surface rounded-2xl border border-slate-200 bg-slate-100/90 p-5 dark:border-slate-800 dark:bg-slate-900">
+          <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Time</p>
+          <p id="timeDisplay" class="mt-2 text-3xl font-semibold">60</p>
+        </div>
+        <div class="surface rounded-2xl border border-slate-200 bg-slate-100/90 p-5 dark:border-slate-800 dark:bg-slate-900">
+          <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">WPM</p>
+          <p id="wpmDisplay" class="mt-2 text-3xl font-semibold">0</p>
+        </div>
+        <div class="surface rounded-2xl border border-slate-200 bg-slate-100/90 p-5 dark:border-slate-800 dark:bg-slate-900">
+          <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Accuracy</p>
+          <p id="accuracyDisplay" class="mt-2 text-3xl font-semibold">100%</p>
+        </div>
+        <div class="surface rounded-2xl border border-slate-200 bg-slate-100/90 p-5 dark:border-slate-800 dark:bg-slate-900">
+          <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Errors</p>
+          <p id="errorDisplay" class="mt-2 text-3xl font-semibold">0</p>
+        </div>
+      </section>
+
+      <section class="surface relative rounded-3xl border border-slate-200 bg-slate-100/90 p-10 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div class="mb-5 flex flex-wrap items-center justify-center gap-3">
+          <button id="capitalizeToggle" type="button" class="group relative z-10 inline-flex items-center gap-2 rounded-full border border-slate-400 bg-slate-50 px-4 py-2 text-slate-800 shadow-sm ring-1 ring-slate-300/60 transition hover:bg-white dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-600/60 dark:hover:bg-slate-700" aria-pressed="false" aria-label="Toggle randomized capitalization">
+            <span class="text-sm font-semibold tracking-wide">Aa</span>
+            <span class="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Caps</span>
+          </button>
+          <button id="languageToggle" type="button" class="group relative z-10 inline-flex items-center gap-2 rounded-full border border-slate-400 bg-slate-50 px-4 py-2 text-slate-800 shadow-sm ring-1 ring-slate-300/60 transition hover:bg-white dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-600/60 dark:hover:bg-slate-700" aria-pressed="false" aria-label="Toggle language">
+            <span class="text-sm font-semibold tracking-wide">EN</span>
+            <span class="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Lang</span>
+          </button>
+          <button id="accentToggle" type="button" class="group relative z-10 inline-flex items-center gap-2 rounded-full border border-slate-400 bg-slate-50 px-4 py-2 text-slate-800 shadow-sm ring-1 ring-slate-300/60 transition hover:bg-white dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-600/60 dark:hover:bg-slate-700" aria-pressed="false" aria-label="Toggle accents">
+            <span class="text-sm font-semibold tracking-wide">Á</span>
+            <span class="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Accents</span>
+          </button>
+        </div>
+        <div id="wordDisplay" class="min-h-[320px] text-[28px] leading-snug text-slate-700 dark:text-slate-200 flex flex-wrap justify-center gap-x-3 gap-y-2 px-8 text-center"></div>
+        <div id="caret" class="pointer-events-none absolute -translate-y-1/2 opacity-0 transition-opacity duration-150">
+          <span class="block h-6 w-[2px] bg-amber-400 dark:bg-amber-300"></span>
+        </div>
+        <input id="textInput" class="surface-input mt-6 w-full rounded-2xl border border-slate-300 bg-slate-50 px-5 py-3 text-xl text-slate-900 focus:border-slate-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950/60 dark:text-white dark:focus:border-slate-400" type="text" placeholder="Start typing here..." autocomplete="off" autofocus />
+      </section>
+
+      <section class="text-sm text-slate-500 dark:text-slate-400">
+        <p>Tip: Use Reset to fetch new words and restart your session.</p>
+      </section>
+    </main>
+
+    <script src="/static/js/app.js"></script>
+  </body>
+</html>
