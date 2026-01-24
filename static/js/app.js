@@ -23,8 +23,8 @@ const resultDuration = document.getElementById("resultDuration");
 
 let words = [];
 let currentIndex = 0;
-let correctChars = 0;
-let incorrectChars = 0;
+let correctKeystrokes = 0;
+let incorrectKeystrokes = 0;
 let errors = 0;
 let isRunning = false;
 let startTime = null;
@@ -41,6 +41,7 @@ let currentLanguage = localStorage.getItem(languageStorageKey) || "en";
 const accentStorageKey = "typing-accents";
 let accentsEnabled = localStorage.getItem(accentStorageKey) !== "false";
 let tabArmed = false;
+let tabShortcutActiveUntil = 0;
 
 function getPreferredTheme() {
   const storedTheme = localStorage.getItem(themeStorageKey);
@@ -123,8 +124,8 @@ function applyLanguageToggle() {
 
 function resetStats() {
   currentIndex = 0;
-  correctChars = 0;
-  incorrectChars = 0;
+  correctKeystrokes = 0;
+  incorrectKeystrokes = 0;
   errors = 0;
   wordResults = [];
   startTime = null;
@@ -146,10 +147,10 @@ function getDuration() {
 }
 
 function updateStats() {
-  const totalChars = correctChars + incorrectChars;
-  const accuracy = totalChars === 0 ? 100 : Math.round((correctChars / totalChars) * 100);
+  const totalChars = correctKeystrokes + incorrectKeystrokes;
+  const accuracy = totalChars === 0 ? 100 : Math.round((correctKeystrokes / totalChars) * 100);
   const elapsedMinutes = startTime ? Math.max((Date.now() - startTime) / 60000, 1 / 60) : 0;
-  const wpm = totalChars === 0 ? 0 : Math.round((correctChars / 5) / elapsedMinutes);
+  const wpm = totalChars === 0 ? 0 : Math.round((correctKeystrokes / 5) / elapsedMinutes);
 
   accuracyDisplay.textContent = `${accuracy}%`;
   errorDisplay.textContent = `${errors}`;
@@ -157,17 +158,16 @@ function updateStats() {
 }
 
 function getCurrentWpm() {
-  const totalChars = correctChars + incorrectChars;
   const elapsedMinutes = startTime ? Math.max((Date.now() - startTime) / 60000, 1 / 60) : 0;
-  return totalChars === 0 ? 0 : Math.round((correctChars / 5) / elapsedMinutes);
+  return correctKeystrokes === 0 ? 0 : Math.round((correctKeystrokes / 5) / elapsedMinutes);
 }
 
 function showResultsScreen() {
   if (!resultsScreen) {
     return;
   }
-  const totalChars = correctChars + incorrectChars;
-  const accuracy = totalChars === 0 ? 100 : Math.round((correctChars / totalChars) * 100);
+  const totalChars = correctKeystrokes + incorrectKeystrokes;
+  const accuracy = totalChars === 0 ? 100 : Math.round((correctKeystrokes / totalChars) * 100);
   const wpm = getCurrentWpm();
   const durationSeconds = startTime ? Math.max(1, Math.round((Date.now() - startTime) / 1000)) : 0;
   if (resultWpm) resultWpm.textContent = String(wpm);
@@ -194,6 +194,17 @@ function updateTimeDisplay() {
   } else {
     timeDisplay.textContent = `${timeLeft}`;
   }
+}
+
+function getExpectedCharAt(position) {
+  const target = words[currentIndex] || "";
+  if (position < target.length) {
+    return target[position];
+  }
+  if (position === target.length) {
+    return " ";
+  }
+  return null;
 }
 
 function renderWords() {
@@ -235,25 +246,8 @@ function renderWords() {
   updateCaretPosition(textInput.value);
 }
 
-function scoreWord(typed, target) {
-  let correct = 0;
-  let incorrect = 0;
-  const maxLength = Math.max(typed.length, target.length);
-  for (let i = 0; i < maxLength; i += 1) {
-    if (typed[i] === target[i]) {
-      correct += 1;
-    } else {
-      incorrect += 1;
-    }
-  }
-  return { correct, incorrect };
-}
-
 function nextWord(typed) {
   const target = words[currentIndex] || "";
-  const { correct, incorrect } = scoreWord(typed, target);
-  correctChars += correct;
-  incorrectChars += incorrect;
   const isCorrect = typed === target;
   if (!isCorrect) {
     errors += 1;
@@ -365,6 +359,7 @@ function handleInput() {
     startTest();
   }
   updateCurrentWordHighlight(value);
+  updateStats();
   if (value.endsWith(" ")) {
     const typed = value.trim();
     nextWord(typed);
@@ -447,6 +442,38 @@ resetBtn.addEventListener("click", async () => {
   updateCaretPosition("");
 });
 textInput.addEventListener("input", handleInput);
+textInput.addEventListener("keydown", (event) => {
+  if (event.ctrlKey || event.metaKey || event.altKey) {
+    return;
+  }
+  if (!words.length) {
+    return;
+  }
+  if (resultsScreen && !resultsScreen.classList.contains("hidden")) {
+    return;
+  }
+  if (event.key === "Backspace" || event.key === "Delete") {
+    incorrectKeystrokes += 1;
+    updateStats();
+    return;
+  }
+  let key = event.key;
+  if (key === "Spacebar" || key === "Space") {
+    key = " ";
+  }
+  if (key.length !== 1) {
+    return;
+  }
+  const value = textInput.value;
+  const caretPos = textInput.selectionStart ?? value.length;
+  const expected = getExpectedCharAt(caretPos);
+  if (key === expected) {
+    correctKeystrokes += 1;
+  } else {
+    incorrectKeystrokes += 1;
+  }
+  updateStats();
+});
 
 if (capitalizeToggle) {
   applyCapitalizeToggle();
@@ -503,17 +530,22 @@ durationInput.addEventListener("change", () => {
 });
 
 document.addEventListener("keydown", async (event) => {
-  if (event.key === "Tab") {
+  const resultsVisible = resultsScreen && !resultsScreen.classList.contains("hidden");
+  if (event.key === "Tab" && resultsVisible) {
     tabArmed = true;
+    tabShortcutActiveUntil = Date.now() + 1000;
     event.preventDefault();
     return;
   }
-  if (event.key === "Enter" && tabArmed) {
-    event.preventDefault();
-    await fetchWords({ replace: true });
-    hideResultsScreen();
-    resetStats();
-    textInput.focus();
+  if (event.key === "Enter" && resultsVisible) {
+    const now = Date.now();
+    if (tabArmed || now <= tabShortcutActiveUntil) {
+      event.preventDefault();
+      await fetchWords({ replace: true });
+      hideResultsScreen();
+      resetStats();
+      textInput.focus();
+    }
   }
 });
 
