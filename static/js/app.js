@@ -40,8 +40,6 @@ const languageStorageKey = "typing-language";
 let currentLanguage = localStorage.getItem(languageStorageKey) || "en";
 const accentStorageKey = "typing-accents";
 let accentsEnabled = localStorage.getItem(accentStorageKey) !== "false";
-let tabArmed = false;
-let tabShortcutActiveUntil = 0;
 
 function getPreferredTheme() {
   const storedTheme = localStorage.getItem(themeStorageKey);
@@ -530,28 +528,12 @@ durationInput.addEventListener("change", () => {
 });
 
 document.addEventListener("keydown", async (event) => {
-  const resultsVisible = resultsScreen && !resultsScreen.classList.contains("hidden");
-  if (event.key === "Tab" && resultsVisible) {
-    tabArmed = true;
-    tabShortcutActiveUntil = Date.now() + 1000;
+  if (event.key === "Enter" && event.shiftKey) {
     event.preventDefault();
-    return;
-  }
-  if (event.key === "Enter" && resultsVisible) {
-    const now = Date.now();
-    if (tabArmed || now <= tabShortcutActiveUntil) {
-      event.preventDefault();
-      await fetchWords({ replace: true });
-      hideResultsScreen();
-      resetStats();
-      textInput.focus();
-    }
-  }
-});
-
-document.addEventListener("keyup", (event) => {
-  if (event.key === "Tab") {
-    tabArmed = false;
+    await fetchWords({ replace: true });
+    hideResultsScreen();
+    resetStats();
+    textInput.focus();
   }
 });
 
