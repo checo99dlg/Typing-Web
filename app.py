@@ -1,13 +1,66 @@
+import os
+import sys
 import random
+from datetime import datetime, timedelta
 from pathlib import Path
 
-from flask import Flask, jsonify, render_template, request
+from authlib.integrations.flask_client import OAuth
+from flask import Flask, jsonify, redirect, render_template, request, url_for, flash
+from flask_login import LoginManager, UserMixin, current_user, login_required, login_user, logout_user
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import func, text
+from werkzeug.security import check_password_hash, generate_password_hash
 
 APP_ROOT = Path(__file__).resolve().parent
 WORDS_FILE = APP_ROOT / "words.txt"
 WORDS_ES_FILE = APP_ROOT / "words_es.txt"
 
 app = Flask(__name__)
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret")
+database_url = os.environ.get("DATABASE_URL")
+if database_url and database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url or f"sqlite:///{APP_ROOT / 'typing.db'}"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+running_alembic = any("alembic" in arg for arg in sys.argv)
+auto_create_db = os.environ.get("AUTO_CREATE_DB", "true").lower() == "true" and not running_alembic
+
+db = SQLAlchemy(app)
+login_manager = LoginManager(app)
+login_manager.login_view = "login"
+oauth = OAuth(app)
+google_oauth = oauth.register(
+    name="google",
+    client_id=os.environ.get("GOOGLE_CLIENT_ID"),
+    client_secret=os.environ.get("GOOGLE_CLIENT_SECRET"),
+    server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+    client_kwargs={"scope": "openid email profile"},
+)
+
+
+class User(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(255), unique=True, nullable=False)
+    username = db.Column(db.String(40), unique=True, nullable=True)
+    password_hash = db.Column(db.String(255), nullable=True)
+    google_sub = db.Column(db.String(255), unique=True, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class TestResult(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    wpm = db.Column(db.Integer, nullable=False)
+    raw_wpm = db.Column(db.Integer, nullable=False, default=0)
+    accuracy = db.Column(db.Integer, nullable=False)
+    duration_seconds = db.Column(db.Integer, nullable=False)
+    char_count = db.Column(db.Integer, nullable=False)
+    correct_chars = db.Column(db.Integer, nullable=False, default=0)
+    incorrect_chars = db.Column(db.Integer, nullable=False, default=0)
+    extra_chars = db.Column(db.Integer, nullable=False, default=0)
+    missed_chars = db.Column(db.Integer, nullable=False, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship("User", backref=db.backref("results", lazy=True))
 
 
 def load_words(path: Path) -> list[str]:
@@ -20,10 +73,43 @@ def load_words(path: Path) -> list[str]:
 WORDS_CACHE = load_words(WORDS_FILE)
 WORDS_ES_CACHE = load_words(WORDS_ES_FILE)
 
+def ensure_sqlite_columns():
+    if not app.config["SQLALCHEMY_DATABASE_URI"].startswith("sqlite"):
+        return
+    columns = {
+        "raw_wpm": "INTEGER DEFAULT 0",
+        "correct_chars": "INTEGER DEFAULT 0",
+        "incorrect_chars": "INTEGER DEFAULT 0",
+        "extra_chars": "INTEGER DEFAULT 0",
+        "missed_chars": "INTEGER DEFAULT 0",
+    }
+    existing = {
+        row[1]
+        for row in db.session.execute(text("PRAGMA table_info(test_result)")).fetchall()
+    }
+    for column, col_type in columns.items():
+        if column not in existing:
+            db.session.execute(text(f"ALTER TABLE test_result ADD COLUMN {column} {col_type}"))
+    db.session.commit()
+
+
+with app.app_context():
+    if auto_create_db and app.config["SQLALCHEMY_DATABASE_URI"].startswith("sqlite"):
+        db.create_all()
+        ensure_sqlite_columns()
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return db.session.get(User, int(user_id))
+
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    summary = None
+    if current_user.is_authenticated and current_user.username:
+        summary = get_user_summary(current_user.id)
+    return render_template("index.html", summary=summary)
 
 
 @app.route("/api/words")
@@ -48,8 +134,259 @@ def api_words():
     return jsonify({"words": sample})
 
 
-if __name__ == "__main__":
-    import os
+@app.route("/signup", methods=["GET", "POST"])
+def signup():
+    if current_user.is_authenticated:
+        return redirect(url_for("profile"))
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        confirm = request.form.get("confirm", "")
+        if not email or not username or not password:
+            flash("Email, username, and password are required.")
+            return render_template("signup.html")
+        if password != confirm:
+            flash("Passwords do not match.")
+            return render_template("signup.html")
+        if User.query.filter_by(email=email).first():
+            flash("Email is already registered.")
+            return render_template("signup.html")
+        if User.query.filter_by(username=username).first():
+            flash("Username is already taken.")
+            return render_template("signup.html")
+        user = User(
+            email=email,
+            username=username,
+            password_hash=generate_password_hash(password),
+        )
+        db.session.add(user)
+        db.session.commit()
+        login_user(user)
+        return redirect(url_for("profile"))
+    return render_template("signup.html")
 
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for("profile"))
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+        user = User.query.filter_by(email=email).first()
+        if not user or not user.password_hash or not check_password_hash(user.password_hash, password):
+            flash("Invalid email or password.")
+            return render_template("login.html")
+        login_user(user)
+        return redirect(url_for("profile"))
+    return render_template("login.html")
+
+
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for("index"))
+
+
+@app.route("/auth/google")
+def auth_google():
+    if not os.environ.get("GOOGLE_CLIENT_ID") or not os.environ.get("GOOGLE_CLIENT_SECRET"):
+        flash("Google login is not configured.")
+        return redirect(url_for("login"))
+    redirect_uri = url_for("auth_google_callback", _external=True)
+    return google_oauth.authorize_redirect(redirect_uri)
+
+
+@app.route("/auth/google/callback")
+def auth_google_callback():
+    try:
+        token = google_oauth.authorize_access_token()
+        userinfo = token.get("userinfo") or google_oauth.parse_id_token(token)
+    except Exception:
+        flash("Google sign-in failed. Try again.")
+        return redirect(url_for("login"))
+    if not userinfo:
+        flash("Could not fetch Google profile.")
+        return redirect(url_for("login"))
+    email = (userinfo.get("email") or "").lower()
+    sub = userinfo.get("sub")
+    user = User.query.filter_by(google_sub=sub).first() if sub else None
+    if not user and email:
+        user = User.query.filter_by(email=email).first()
+    if not user:
+        username_seed = (userinfo.get("given_name") or email.split("@")[0] if email else "user").strip()
+        username = username_seed[:40]
+        if not username:
+            username = "user"
+        if User.query.filter_by(username=username).first():
+            username = None
+        user = User(email=email or f"google-{sub}@example.com", username=username, google_sub=sub)
+        db.session.add(user)
+        db.session.commit()
+    login_user(user)
+    if not user.username:
+        flash("Set a username to finish your profile.")
+        return redirect(url_for("profile"))
+    return redirect(url_for("profile"))
+
+
+def calculate_streaks(results):
+    dates = sorted({result.created_at.date() for result in results})
+    if not dates:
+        return 0, 0
+    longest = 1
+    current = 1
+    run = 1
+    for i in range(1, len(dates)):
+        if dates[i] == dates[i - 1] + timedelta(days=1):
+            run += 1
+            longest = max(longest, run)
+        else:
+            run = 1
+    today = datetime.utcnow().date()
+    if dates[-1] == today:
+        current = 1
+        for i in range(len(dates) - 1, 0, -1):
+            if dates[i] == dates[i - 1] + timedelta(days=1):
+                current += 1
+            else:
+                break
+    else:
+        current = 0
+    return current, longest
+
+
+def get_user_summary(user_id: int):
+    avg_wpm, avg_accuracy = db.session.query(
+        func.avg(TestResult.wpm),
+        func.avg(TestResult.accuracy),
+    ).filter(TestResult.user_id == user_id).one()
+    fastest_wpm = (
+        db.session.query(func.max(TestResult.wpm)).filter(TestResult.user_id == user_id).scalar()
+    )
+    fastest_raw_wpm = (
+        db.session.query(func.max(TestResult.raw_wpm))
+        .filter(TestResult.user_id == user_id)
+        .scalar()
+    )
+    best_accuracy = (
+        db.session.query(func.max(TestResult.accuracy))
+        .filter(TestResult.user_id == user_id)
+        .scalar()
+    )
+    total_tests = db.session.query(func.count(TestResult.id)).filter(TestResult.user_id == user_id).scalar()
+    all_results = TestResult.query.filter_by(user_id=user_id).all()
+    current_streak, longest_streak = calculate_streaks(all_results)
+    totals = db.session.query(
+        func.sum(TestResult.correct_chars),
+        func.sum(TestResult.incorrect_chars),
+        func.sum(TestResult.extra_chars),
+        func.sum(TestResult.missed_chars),
+    ).filter(TestResult.user_id == user_id).one()
+    return {
+        "avg_wpm": int(avg_wpm or 0),
+        "avg_accuracy": int(avg_accuracy or 0),
+        "fastest_wpm": int(fastest_wpm or 0),
+        "fastest_raw_wpm": int(fastest_raw_wpm or 0),
+        "best_accuracy": int(best_accuracy or 0),
+        "total_tests": int(total_tests or 0),
+        "current_streak": current_streak,
+        "longest_streak": longest_streak,
+        "correct_chars": int(totals[0] or 0),
+        "incorrect_chars": int(totals[1] or 0),
+        "extra_chars": int(totals[2] or 0),
+        "missed_chars": int(totals[3] or 0),
+    }
+
+
+@app.before_request
+def require_username():
+    if not current_user.is_authenticated:
+        return
+    if current_user.username:
+        return
+    allowed = {
+        "profile",
+        "logout",
+        "auth_google",
+        "auth_google_callback",
+        "login",
+        "signup",
+        "static",
+    }
+    if request.endpoint in allowed or request.path.startswith("/static"):
+        return
+    return redirect(url_for("profile"))
+
+
+@app.route("/profile", methods=["GET", "POST"])
+@login_required
+def profile():
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        if not username:
+            flash("Username cannot be empty.")
+        elif User.query.filter(User.username == username, User.id != current_user.id).first():
+            flash("That username is already taken.")
+        else:
+            current_user.username = username
+            db.session.commit()
+            flash("Username updated.")
+        return redirect(url_for("profile"))
+
+    summary = get_user_summary(current_user.id)
+    recent_results = (
+        TestResult.query.filter_by(user_id=current_user.id)
+        .order_by(TestResult.created_at.desc())
+        .limit(30)
+        .all()
+    )
+    return render_template(
+        "profile.html",
+        results=recent_results,
+        summary=summary,
+    )
+
+
+@app.route("/api/results", methods=["POST"])
+@login_required
+def api_results():
+    if not current_user.username:
+        return jsonify({"error": "Set username first"}), 403
+    payload = request.get_json(silent=True) or {}
+    try:
+        wpm = int(payload.get("wpm", 0))
+        raw_wpm = int(payload.get("rawWpm", 0))
+        accuracy = int(payload.get("accuracy", 0))
+        duration = int(payload.get("duration", 0))
+        char_count = int(payload.get("chars", 0))
+        correct_chars = int(payload.get("correctChars", 0))
+        incorrect_chars = int(payload.get("incorrectChars", 0))
+        extra_chars = int(payload.get("extraChars", 0))
+        missed_chars = int(payload.get("missedChars", 0))
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid payload"}), 400
+    if duration <= 0:
+        return jsonify({"error": "Invalid duration"}), 400
+    result = TestResult(
+        user_id=current_user.id,
+        wpm=max(wpm, 0),
+        raw_wpm=max(raw_wpm, 0),
+        accuracy=max(min(accuracy, 100), 0),
+        duration_seconds=duration,
+        char_count=max(char_count, 0),
+        correct_chars=max(correct_chars, 0),
+        incorrect_chars=max(incorrect_chars, 0),
+        extra_chars=max(extra_chars, 0),
+        missed_chars=max(missed_chars, 0),
+    )
+    db.session.add(result)
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
+if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port, debug=True)

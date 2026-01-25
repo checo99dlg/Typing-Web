@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Profile · ChecoType</title>
+    <script>
+      (() => {
+        try {
+          const storedTheme = localStorage.getItem("typing-theme");
+          const theme =
+            storedTheme === "dark" || storedTheme === "light"
+              ? storedTheme
+              : window.matchMedia("(prefers-color-scheme: dark)").matches
+                ? "dark"
+                : "light";
+          if (theme === "dark") {
+            document.documentElement.classList.add("dark");
+          }
+        } catch (error) {}
+      })();
+    </script>
+    <script>
+      window.tailwind = { config: { darkMode: "class" } };
+      tailwind = window.tailwind;
+    </script>
+    <style>
+      html {
+        background-color: #ffffff;
+      }
+      html.dark {
+        background-color: #0b1220;
+      }
+      html.dark body {
+        color: #f8fafc;
+      }
+      html.dark .surface {
+        background-color: rgba(15, 23, 42, 0.9);
+        border-color: #1f2937;
+      }
+      html.dark .surface-input {
+        background-color: rgba(2, 6, 23, 0.6);
+        border-color: #334155;
+        color: #f8fafc;
+      }
+    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="min-h-screen bg-transparent text-slate-900 dark:text-white">
+    <main class="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-10 px-8 py-12">
+      <header class="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p class="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500">Your profile</p>
+          <h1 class="mt-3 text-4xl font-semibold tracking-tight">@{{ current_user.username or "set-username" }}</h1>
+        </div>
+        <div class="flex items-center gap-3">
+          <a href="{{ url_for('index') }}" class="rounded-full border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-300 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">Back to test</a>
+          <a href="{{ url_for('logout') }}" class="rounded-full border border-transparent px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">Log out</a>
+        </div>
+      </header>
+
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200">
+            {{ messages[0] }}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      {% if not current_user.username %}
+        <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
+          Set a username to finish onboarding and unlock progress tracking.
+        </div>
+      {% endif %}
+
+      <section class="surface rounded-3xl border border-slate-200 bg-slate-100/90 p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <h2 class="text-lg font-semibold">Profile settings</h2>
+        <form method="post" class="mt-4 flex flex-wrap items-end gap-4">
+          <label class="flex flex-col gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+            Username
+            <input name="username" type="text" required value="{{ current_user.username or '' }}" class="surface-input w-64 rounded-xl border border-slate-300 bg-slate-300 px-4 py-3 text-base text-slate-900 focus:border-slate-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950/60 dark:text-white dark:focus:border-slate-400" />
+          </label>
+          <button type="submit" class="rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-slate-800 dark:bg-slate-200 dark:text-slate-950 dark:hover:bg-white">Update</button>
+        </form>
+      </section>
+
+      <section class="grid gap-5 md:grid-cols-6">
+        <div class="surface rounded-2xl border border-slate-200 bg-slate-100/90 p-5 dark:border-slate-800 dark:bg-slate-900">
+          <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Fastest WPM</p>
+          <p class="mt-2 text-3xl font-semibold">{{ summary.fastest_wpm }}</p>
+        </div>
+        <div class="surface rounded-2xl border border-slate-200 bg-slate-100/90 p-5 dark:border-slate-800 dark:bg-slate-900">
+          <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Fastest Raw WPM</p>
+          <p class="mt-2 text-3xl font-semibold">{{ summary.fastest_raw_wpm }}</p>
+        </div>
+        <div class="surface rounded-2xl border border-slate-200 bg-slate-100/90 p-5 dark:border-slate-800 dark:bg-slate-900">
+          <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Avg WPM</p>
+          <p class="mt-2 text-3xl font-semibold">{{ summary.avg_wpm }}</p>
+        </div>
+        <div class="surface rounded-2xl border border-slate-200 bg-slate-100/90 p-5 dark:border-slate-800 dark:bg-slate-900">
+          <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Avg Accuracy</p>
+          <p class="mt-2 text-3xl font-semibold">{{ summary.avg_accuracy }}%</p>
+        </div>
+        <div class="surface rounded-2xl border border-slate-200 bg-slate-100/90 p-5 dark:border-slate-800 dark:bg-slate-900">
+          <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Best Accuracy</p>
+          <p class="mt-2 text-3xl font-semibold">{{ summary.best_accuracy }}%</p>
+        </div>
+        <div class="surface rounded-2xl border border-slate-200 bg-slate-100/90 p-5 dark:border-slate-800 dark:bg-slate-900">
+          <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Streak</p>
+          <p class="mt-2 text-3xl font-semibold">{{ summary.current_streak }} <span class="text-base font-medium text-slate-500">/ {{ summary.longest_streak }}</span></p>
+        </div>
+      </section>
+
+      <section class="surface rounded-3xl border border-slate-200 bg-slate-100/90 p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 class="text-lg font-semibold">Recent tests</h2>
+            <p class="mt-1 text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-slate-500">Latest 30</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+            <span class="uppercase tracking-[0.25em]">Records</span>
+            <span class="rounded-full border border-slate-200 bg-white/80 px-3 py-1 font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200">Fastest Raw {{ summary.fastest_raw_wpm }}</span>
+            <span class="uppercase tracking-[0.25em]">Characters</span>
+            <span class="rounded-full border border-slate-200 bg-white/80 px-3 py-1 font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200">Correct {{ summary.correct_chars }}</span>
+            <span class="rounded-full border border-slate-200 bg-white/80 px-3 py-1 font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200">Incorrect {{ summary.incorrect_chars }}</span>
+            <span class="rounded-full border border-slate-200 bg-white/80 px-3 py-1 font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200">Extra {{ summary.extra_chars }}</span>
+            <span class="rounded-full border border-slate-200 bg-white/80 px-3 py-1 font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200">Missed {{ summary.missed_chars }}</span>
+          </div>
+        </div>
+        {% if results %}
+          <div class="mt-4 overflow-x-auto">
+            <table class="w-full min-w-[520px] text-left text-sm">
+              <thead class="text-xs uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
+                <tr>
+                  <th class="py-3">Date</th>
+                  <th class="py-3">WPM</th>
+                  <th class="py-3">Raw WPM</th>
+                  <th class="py-3">Accuracy</th>
+                  <th class="py-3">Duration</th>
+                  <th class="py-3">Chars</th>
+                </tr>
+              </thead>
+              <tbody class="text-slate-600 dark:text-slate-300">
+                {% for result in results %}
+                  <tr class="border-t border-slate-200 dark:border-slate-800">
+                    <td class="py-3">{{ result.created_at.strftime("%b %d, %Y %H:%M") }}</td>
+                    <td class="py-3 font-semibold text-slate-900 dark:text-white">{{ result.wpm }}</td>
+                    <td class="py-3">{{ result.raw_wpm }}</td>
+                    <td class="py-3">{{ result.accuracy }}%</td>
+                    <td class="py-3">{{ result.duration_seconds }}s</td>
+                    <td class="py-3">{{ result.char_count }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="mt-4 text-sm text-slate-500 dark:text-slate-400">No results yet. Finish a test to start tracking progress.</p>
+        {% endif %}
+      </section>
+    </main>
+  </body>
+</html>

@@ -17,14 +17,20 @@ const languageToggle = document.getElementById("languageToggle");
 const accentToggle = document.getElementById("accentToggle");
 const resultsScreen = document.getElementById("resultsScreen");
 const resultWpm = document.getElementById("resultWpm");
+const resultRawWpm = document.getElementById("resultRawWpm");
 const resultAccuracy = document.getElementById("resultAccuracy");
 const resultChars = document.getElementById("resultChars");
 const resultDuration = document.getElementById("resultDuration");
+const isAuthenticated = document.body.dataset.authenticated === "true";
 
 let words = [];
 let currentIndex = 0;
 let correctKeystrokes = 0;
 let incorrectKeystrokes = 0;
+let correctChars = 0;
+let incorrectChars = 0;
+let extraChars = 0;
+let missedChars = 0;
 let errors = 0;
 let isRunning = false;
 let startTime = null;
@@ -124,6 +130,10 @@ function resetStats() {
   currentIndex = 0;
   correctKeystrokes = 0;
   incorrectKeystrokes = 0;
+  correctChars = 0;
+  incorrectChars = 0;
+  extraChars = 0;
+  missedChars = 0;
   errors = 0;
   wordResults = [];
   startTime = null;
@@ -167,14 +177,28 @@ function showResultsScreen() {
   const totalChars = correctKeystrokes + incorrectKeystrokes;
   const accuracy = totalChars === 0 ? 100 : Math.round((correctKeystrokes / totalChars) * 100);
   const wpm = getCurrentWpm();
+  const elapsedMinutes = startTime ? Math.max((Date.now() - startTime) / 60000, 1 / 60) : 0;
+  const rawWpm = totalChars === 0 ? 0 : Math.round((totalChars / 5) / elapsedMinutes);
   const durationSeconds = startTime ? Math.max(1, Math.round((Date.now() - startTime) / 1000)) : 0;
   if (resultWpm) resultWpm.textContent = String(wpm);
+  if (resultRawWpm) resultRawWpm.textContent = String(rawWpm);
   if (resultAccuracy) resultAccuracy.textContent = `${accuracy}%`;
   if (resultChars) resultChars.textContent = String(totalChars);
   if (resultDuration) resultDuration.textContent = `${durationSeconds}s`;
   resultsScreen.classList.remove("hidden");
   resultsScreen.classList.add("flex");
   textInput.disabled = true;
+  recordResult({
+    wpm,
+    rawWpm,
+    accuracy,
+    duration: durationSeconds,
+    chars: totalChars,
+    correctChars,
+    incorrectChars,
+    extraChars,
+    missedChars,
+  });
 }
 
 function hideResultsScreen() {
@@ -192,6 +216,27 @@ function updateTimeDisplay() {
   } else {
     timeDisplay.textContent = `${timeLeft}`;
   }
+}
+
+function scoreWord(typed, target) {
+  let correct = 0;
+  let incorrect = 0;
+  let extra = 0;
+  let missed = 0;
+  const minLength = Math.min(typed.length, target.length);
+  for (let i = 0; i < minLength; i += 1) {
+    if (typed[i] === target[i]) {
+      correct += 1;
+    } else {
+      incorrect += 1;
+    }
+  }
+  if (typed.length > target.length) {
+    extra = typed.length - target.length;
+  } else if (typed.length < target.length) {
+    missed = target.length - typed.length;
+  }
+  return { correct, incorrect, extra, missed };
 }
 
 function getExpectedCharAt(position) {
@@ -246,6 +291,11 @@ function renderWords() {
 
 function nextWord(typed) {
   const target = words[currentIndex] || "";
+  const { correct, incorrect, extra, missed } = scoreWord(typed, target);
+  correctChars += correct;
+  incorrectChars += incorrect;
+  extraChars += extra;
+  missedChars += missed;
   const isCorrect = typed === target;
   if (!isCorrect) {
     errors += 1;
@@ -550,3 +600,18 @@ fetchWords({ replace: true }).then(() => {
   resetStats();
   textInput.focus();
 });
+
+async function recordResult(payload) {
+  if (!isAuthenticated) {
+    return;
+  }
+  try {
+    await fetch("/api/results", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  } catch (error) {
+    // Ignore save errors; results are still visible locally.
+  }
+}

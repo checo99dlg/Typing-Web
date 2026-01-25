@@ -52,7 +52,7 @@
     </style>
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
-  <body class="min-h-screen bg-transparent text-slate-900 dark:text-white">
+  <body class="min-h-screen bg-transparent text-slate-900 dark:text-white" data-authenticated="{{ 'true' if current_user.is_authenticated else 'false' }}">
     <main class="mx-auto flex min-h-screen w-full max-w-6xl flex-col justify-center gap-10 px-8 py-12">
       <div id="resultsScreen" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/60 px-6 py-10 backdrop-blur-sm">
         <div class="surface w-full max-w-xl rounded-3xl border border-slate-200 bg-white/95 p-8 text-center shadow-xl dark:border-slate-800 dark:bg-slate-900/95">
@@ -64,6 +64,10 @@
               <p id="resultWpm" class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">0</p>
             </div>
             <div class="rounded-2xl border border-slate-200 bg-slate-100/80 p-4 dark:border-slate-800 dark:bg-slate-900">
+              <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Raw WPM</p>
+              <p id="resultRawWpm" class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">0</p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-100/80 p-4 dark:border-slate-800 dark:bg-slate-900">
               <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Accuracy</p>
               <p id="resultAccuracy" class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">0%</p>
             </div>
@@ -71,6 +75,8 @@
               <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Characters</p>
               <p id="resultChars" class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">0</p>
             </div>
+          </div>
+          <div class="mt-4 grid gap-4 text-left sm:grid-cols-2">
             <div class="rounded-2xl border border-slate-200 bg-slate-100/80 p-4 dark:border-slate-800 dark:bg-slate-900">
               <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Duration</p>
               <p id="resultDuration" class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">0s</p>
@@ -122,6 +128,18 @@
           </label>
           <button id="startBtn" class="rounded-full bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white shadow hover:bg-slate-800 dark:bg-slate-200 dark:text-slate-950 dark:hover:bg-white">Start</button>
           <button id="resetBtn" class="rounded-full border border-slate-300 px-6 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-300 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">Reset</button>
+          <div class="ml-auto flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
+            {% if current_user.is_authenticated %}
+              <span class="rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300">
+                @{{ current_user.username or "set-username" }}
+              </span>
+              <a href="{{ url_for('profile') }}" class="rounded-full border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-300 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">Profile</a>
+              <a href="{{ url_for('logout') }}" class="rounded-full border border-transparent px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">Log out</a>
+            {% else %}
+              <a href="{{ url_for('login') }}" class="rounded-full border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-300 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">Sign in</a>
+              <a href="{{ url_for('signup') }}" class="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow hover:bg-slate-800 dark:bg-slate-200 dark:text-slate-950 dark:hover:bg-white">Create account</a>
+            {% endif %}
+          </div>
         </div>
       </header>
 
@@ -143,6 +161,40 @@
           <p id="errorDisplay" class="mt-2 text-3xl font-semibold">0</p>
         </div>
       </section>
+
+      {% if summary %}
+      <section class="surface rounded-3xl border border-slate-200 bg-slate-100/90 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p class="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500">My Records</p>
+            <h2 class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">Keep pushing your personal bests</h2>
+          </div>
+          <a href="{{ url_for('profile') }}" class="rounded-full border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-300 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">View profile</a>
+        </div>
+        <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div class="rounded-2xl border border-slate-200 bg-white/80 p-4 dark:border-slate-800 dark:bg-slate-950/40">
+            <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Fastest WPM</p>
+            <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ summary.fastest_wpm }}</p>
+          </div>
+          <div class="rounded-2xl border border-slate-200 bg-white/80 p-4 dark:border-slate-800 dark:bg-slate-950/40">
+            <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Fastest Raw WPM</p>
+            <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ summary.fastest_raw_wpm }}</p>
+          </div>
+          <div class="rounded-2xl border border-slate-200 bg-white/80 p-4 dark:border-slate-800 dark:bg-slate-950/40">
+            <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Best Accuracy</p>
+            <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ summary.best_accuracy }}%</p>
+          </div>
+          <div class="rounded-2xl border border-slate-200 bg-white/80 p-4 dark:border-slate-800 dark:bg-slate-950/40">
+            <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Avg WPM</p>
+            <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ summary.avg_wpm }}</p>
+          </div>
+          <div class="rounded-2xl border border-slate-200 bg-white/80 p-4 dark:border-slate-800 dark:bg-slate-950/40">
+            <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Streak</p>
+            <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ summary.current_streak }} <span class="text-base font-medium text-slate-500">/ {{ summary.longest_streak }}</span></p>
+          </div>
+        </div>
+      </section>
+      {% endif %}
 
       <section class="surface relative rounded-3xl border border-slate-200 bg-slate-100/90 p-10 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div class="mb-5 flex flex-wrap items-center justify-center gap-3">
