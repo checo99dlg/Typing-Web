@@ -1,8 +1,9 @@
 import os
 import sys
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from authlib.integrations.flask_client import OAuth
 from flask import Flask, jsonify, redirect, render_template, request, url_for, flash
@@ -44,6 +45,7 @@ class User(db.Model, UserMixin):
     username = db.Column(db.String(40), unique=True, nullable=True)
     password_hash = db.Column(db.String(255), nullable=True)
     google_sub = db.Column(db.String(255), unique=True, nullable=True)
+    timezone = db.Column(db.String(64), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
@@ -90,6 +92,16 @@ def ensure_sqlite_columns():
     for column, col_type in columns.items():
         if column not in existing:
             db.session.execute(text(f"ALTER TABLE test_result ADD COLUMN {column} {col_type}"))
+    user_columns = {
+        "timezone": "VARCHAR(64)",
+    }
+    user_existing = {
+        row[1]
+        for row in db.session.execute(text("PRAGMA table_info(user)")).fetchall()
+    }
+    for column, col_type in user_columns.items():
+        if column not in user_existing:
+            db.session.execute(text(f"ALTER TABLE user ADD COLUMN {column} {col_type}"))
     db.session.commit()
 
 
@@ -258,6 +270,18 @@ def calculate_streaks(results):
     return current, longest
 
 
+def format_datetime_for_user(dt, tz_name):
+    if not dt:
+        return ""
+    try:
+        tz = ZoneInfo(tz_name) if tz_name else timezone.utc
+    except Exception:
+        tz = timezone.utc
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(tz).strftime("%b %d, %Y %H:%M")
+
+
 def get_user_summary(user_id: int):
     avg_wpm, avg_accuracy = db.session.query(
         func.avg(TestResult.wpm),
@@ -347,6 +371,7 @@ def profile():
         "profile.html",
         results=recent_results,
         summary=summary,
+        format_dt=lambda dt: format_datetime_for_user(dt, current_user.timezone),
     )
 
 
@@ -384,6 +409,21 @@ def api_results():
     )
     db.session.add(result)
     db.session.commit()
+    return jsonify({"ok": True})
+
+
+@app.route("/api/timezone", methods=["POST"])
+@login_required
+def api_timezone():
+    payload = request.get_json(silent=True) or {}
+    tz_name = (payload.get("timezone") or "").strip()
+    if tz_name:
+        try:
+            ZoneInfo(tz_name)
+        except Exception:
+            return jsonify({"error": "Invalid timezone"}), 400
+        current_user.timezone = tz_name
+        db.session.commit()
     return jsonify({"ok": True})
 
 

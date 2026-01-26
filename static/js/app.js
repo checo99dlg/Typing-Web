@@ -601,6 +601,8 @@ fetchWords({ replace: true }).then(() => {
   textInput.focus();
 });
 
+setUserTimezone();
+
 async function recordResult(payload) {
   if (!isAuthenticated) {
     return;
@@ -613,5 +615,24 @@ async function recordResult(payload) {
     });
   } catch (error) {
     // Ignore save errors; results are still visible locally.
+  }
+}
+
+async function setUserTimezone() {
+  if (!isAuthenticated) {
+    return;
+  }
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  if (!tz) {
+    return;
+  }
+  try {
+    await fetch("/api/timezone", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ timezone: tz }),
+    });
+  } catch (error) {
+    // Ignore timezone save errors.
   }
 }
