@@ -159,5 +159,18 @@
         {% endif %}
       </section>
     </main>
+    <script>
+      (() => {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (!tz) {
+          return;
+        }
+        fetch("/api/timezone", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ timezone: tz }),
+        }).catch(() => {});
+      })();
+    </script>
   </body>
 </html>

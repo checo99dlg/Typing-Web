@@ -391,6 +391,7 @@ def api_results():
         incorrect_chars = int(payload.get("incorrectChars", 0))
         extra_chars = int(payload.get("extraChars", 0))
         missed_chars = int(payload.get("missedChars", 0))
+        tz_name = (payload.get("timezone") or "").strip()
     except (TypeError, ValueError):
         return jsonify({"error": "Invalid payload"}), 400
     if duration <= 0:
@@ -408,6 +409,13 @@ def api_results():
         missed_chars=max(missed_chars, 0),
     )
     db.session.add(result)
+    if tz_name:
+        try:
+            ZoneInfo(tz_name)
+        except Exception:
+            tz_name = ""
+        if tz_name:
+            current_user.timezone = tz_name
     db.session.commit()
     return jsonify({"ok": True})
 

@@ -180,6 +180,7 @@ function showResultsScreen() {
   const elapsedMinutes = startTime ? Math.max((Date.now() - startTime) / 60000, 1 / 60) : 0;
   const rawWpm = totalChars === 0 ? 0 : Math.round((totalChars / 5) / elapsedMinutes);
   const durationSeconds = startTime ? Math.max(1, Math.round((Date.now() - startTime) / 1000)) : 0;
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
   if (resultWpm) resultWpm.textContent = String(wpm);
   if (resultRawWpm) resultRawWpm.textContent = String(rawWpm);
   if (resultAccuracy) resultAccuracy.textContent = `${accuracy}%`;
@@ -198,6 +199,7 @@ function showResultsScreen() {
     incorrectChars,
     extraChars,
     missedChars,
+    timezone,
   });
 }
 
