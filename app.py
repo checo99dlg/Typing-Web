@@ -38,6 +38,10 @@ google_oauth = oauth.register(
     client_kwargs={"scope": "openid email profile"},
 )
 
+db_scheme = app.config["SQLALCHEMY_DATABASE_URI"].split(":", 1)[0]
+google_ready = bool(os.environ.get("GOOGLE_CLIENT_ID") and os.environ.get("GOOGLE_CLIENT_SECRET"))
+print(f"[startup] db_scheme={db_scheme} google_oauth_configured={google_ready} auto_create_db={auto_create_db}")
+
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
