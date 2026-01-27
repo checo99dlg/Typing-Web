@@ -80,7 +80,34 @@
             Username
             <input name="username" type="text" required value="{{ current_user.username or '' }}" class="surface-input w-64 rounded-xl border border-slate-300 bg-slate-300 px-4 py-3 text-base text-slate-900 focus:border-slate-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950/60 dark:text-white dark:focus:border-slate-400" />
           </label>
-          <button type="submit" class="rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-slate-800 dark:bg-slate-200 dark:text-slate-950 dark:hover:bg-white">Update</button>
+          <button type="submit" name="update_username" value="1" class="rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-slate-800 dark:bg-slate-200 dark:text-slate-950 dark:hover:bg-white">Update</button>
+        </form>
+      </section>
+
+      <section class="surface rounded-3xl border border-slate-200 bg-slate-100/90 p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <h2 class="text-lg font-semibold">Reset password</h2>
+        <form method="post" class="mt-4 grid gap-4 md:grid-cols-3">
+          {% if current_user.password_hash %}
+            <label class="flex flex-col gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+              Current password
+              <input name="current_password" type="password" required class="surface-input rounded-xl border border-slate-300 bg-slate-300 px-4 py-3 text-base text-slate-900 focus:border-slate-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950/60 dark:text-white dark:focus:border-slate-400" />
+            </label>
+          {% else %}
+            <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200 md:col-span-3">
+              You signed up with Google. Set a password to enable email sign-in.
+            </div>
+          {% endif %}
+          <label class="flex flex-col gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+            New password
+            <input name="new_password" type="password" required class="surface-input rounded-xl border border-slate-300 bg-slate-300 px-4 py-3 text-base text-slate-900 focus:border-slate-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950/60 dark:text-white dark:focus:border-slate-400" />
+          </label>
+          <label class="flex flex-col gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+            Confirm new password
+            <input name="confirm_password" type="password" required class="surface-input rounded-xl border border-slate-300 bg-slate-300 px-4 py-3 text-base text-slate-900 focus:border-slate-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950/60 dark:text-white dark:focus:border-slate-400" />
+          </label>
+          <div class="flex items-end">
+            <button type="submit" name="update_password" value="1" class="w-full rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-slate-800 dark:bg-slate-200 dark:text-slate-950 dark:hover:bg-white">Update password</button>
+          </div>
         </form>
       </section>
 

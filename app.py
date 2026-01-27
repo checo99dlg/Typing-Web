@@ -40,7 +40,10 @@ google_oauth = oauth.register(
 
 db_scheme = app.config["SQLALCHEMY_DATABASE_URI"].split(":", 1)[0]
 google_ready = bool(os.environ.get("GOOGLE_CLIENT_ID") and os.environ.get("GOOGLE_CLIENT_SECRET"))
-print(f"[startup] db_scheme={db_scheme} google_oauth_configured={google_ready} auto_create_db={auto_create_db}")
+print(
+    f"[startup] db_scheme={db_scheme} google_oauth_configured={google_ready} auto_create_db={auto_create_db}",
+    flush=True,
+)
 
 
 class User(db.Model, UserMixin):
@@ -354,15 +357,33 @@ def require_username():
 def profile():
     if request.method == "POST":
         username = request.form.get("username", "").strip()
-        if not username:
-            flash("Username cannot be empty.")
-        elif User.query.filter(User.username == username, User.id != current_user.id).first():
-            flash("That username is already taken.")
-        else:
-            current_user.username = username
+        current_password = request.form.get("current_password", "")
+        new_password = request.form.get("new_password", "")
+        confirm_password = request.form.get("confirm_password", "")
+
+        if request.form.get("update_username"):
+            if not username:
+                flash("Username cannot be empty.")
+            elif User.query.filter(User.username == username, User.id != current_user.id).first():
+                flash("That username is already taken.")
+            else:
+                current_user.username = username
+                db.session.commit()
+                flash("Username updated.")
+            return redirect(url_for("profile"))
+
+        if request.form.get("update_password"):
+            if current_user.password_hash:
+                if not check_password_hash(current_user.password_hash, current_password):
+                    flash("Current password is incorrect.")
+                    return redirect(url_for("profile"))
+            if not new_password or new_password != confirm_password:
+                flash("New passwords do not match.")
+                return redirect(url_for("profile"))
+            current_user.password_hash = generate_password_hash(new_password)
             db.session.commit()
-            flash("Username updated.")
-        return redirect(url_for("profile"))
+            flash("Password updated.")
+            return redirect(url_for("profile"))
 
     summary = get_user_summary(current_user.id)
     recent_results = (
@@ -377,6 +398,33 @@ def profile():
         summary=summary,
         format_dt=lambda dt: format_datetime_for_user(dt, current_user.timezone),
     )
+
+
+@app.route("/reset-password", methods=["GET", "POST"])
+def reset_password():
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        current_password = request.form.get("current_password", "")
+        new_password = request.form.get("new_password", "")
+        confirm_password = request.form.get("confirm_password", "")
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            flash("No account found with that email.")
+            return render_template("reset_password.html")
+        if not user.password_hash:
+            flash("This account uses Google sign-in. Set a password from your profile.")
+            return render_template("reset_password.html")
+        if not check_password_hash(user.password_hash, current_password):
+            flash("Current password is incorrect.")
+            return render_template("reset_password.html")
+        if not new_password or new_password != confirm_password:
+            flash("New passwords do not match.")
+            return render_template("reset_password.html")
+        user.password_hash = generate_password_hash(new_password)
+        db.session.commit()
+        flash("Password updated. You can sign in now.")
+        return redirect(url_for("login"))
+    return render_template("reset_password.html")
 
 
 @app.route("/api/results", methods=["POST"])
@@ -437,6 +485,22 @@ def api_timezone():
         current_user.timezone = tz_name
         db.session.commit()
     return jsonify({"ok": True})
+
+
+@app.route("/api/debug-config")
+def api_debug_config():
+    token = os.environ.get("DEBUG_CONFIG_TOKEN")
+    if not token or request.args.get("token") != token:
+        return jsonify({"error": "Not found"}), 404
+    user_count = db.session.query(func.count(User.id)).scalar()
+    return jsonify(
+        {
+            "db_scheme": app.config["SQLALCHEMY_DATABASE_URI"].split(":", 1)[0],
+            "google_ready": google_ready,
+            "auto_create_db": auto_create_db,
+            "user_count": int(user_count or 0),
+        }
+    )
 
 
 if __name__ == "__main__":
