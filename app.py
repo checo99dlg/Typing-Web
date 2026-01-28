@@ -1,10 +1,13 @@
+import hashlib
 import os
+import secrets
 import sys
 import random
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+import boto3
 from authlib.integrations.flask_client import OAuth
 from flask import Flask, jsonify, redirect, render_template, request, url_for, flash
 from flask_login import LoginManager, UserMixin, current_user, login_required, login_user, logout_user
@@ -71,6 +74,15 @@ class TestResult(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     user = db.relationship("User", backref=db.backref("results", lazy=True))
 
+
+class PasswordResetToken(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    token_hash = db.Column(db.String(64), unique=True, nullable=False)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    used_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship("User", backref=db.backref("reset_tokens", lazy=True))
 
 def load_words(path: Path) -> list[str]:
     if not path.exists():
@@ -289,6 +301,40 @@ def format_datetime_for_user(dt, tz_name):
     return dt.astimezone(tz).strftime("%b %d, %Y %H:%M")
 
 
+def send_reset_email(to_email, reset_link):
+    from_email = os.environ.get("SES_FROM_EMAIL")
+    region = os.environ.get("AWS_REGION")
+    if not from_email or not region:
+        app.logger.warning("SES not configured; missing SES_FROM_EMAIL or AWS_REGION.")
+        return False
+    try:
+        client = boto3.client("ses", region_name=region)
+        subject = "Reset your ChecoType password"
+        body_text = (
+            "Use the link below to reset your ChecoType password. "
+            "This link expires in 1 hour.\n\n"
+            f"{reset_link}\n\n"
+            "If you did not request this, you can ignore this email."
+        )
+        body_html = f"""
+        <p>Use the link below to reset your ChecoType password. This link expires in 1 hour.</p>
+        <p><a href="{reset_link}">Reset your password</a></p>
+        <p>If you did not request this, you can ignore this email.</p>
+        """
+        client.send_email(
+            Source=from_email,
+            Destination={"ToAddresses": [to_email]},
+            Message={
+                "Subject": {"Data": subject},
+                "Body": {"Text": {"Data": body_text}, "Html": {"Data": body_html}},
+            },
+        )
+        return True
+    except Exception:
+        app.logger.exception("Failed to send reset email")
+        return False
+
+
 def get_user_summary(user_id: int):
     avg_wpm, avg_accuracy = db.session.query(
         func.avg(TestResult.wpm),
@@ -400,32 +446,50 @@ def profile():
     )
 
 
-@app.route("/reset-password", methods=["GET", "POST"])
-def reset_password():
+@app.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
-        current_password = request.form.get("current_password", "")
+        user = User.query.filter_by(email=email).first()
+        if user:
+            token = secrets.token_urlsafe(32)
+            token_hash = hashlib.sha256(token.encode()).hexdigest()
+            reset_token = PasswordResetToken(
+                user_id=user.id,
+                token_hash=token_hash,
+                expires_at=datetime.utcnow() + timedelta(hours=1),
+            )
+            db.session.add(reset_token)
+            db.session.commit()
+            base_url = os.environ.get("APP_BASE_URL") or request.url_root.rstrip("/")
+            reset_link = f"{base_url}{url_for('password_reset_token', token=token)}"
+            send_reset_email(user.email, reset_link)
+        flash("If that email exists, a reset link has been sent.")
+        return redirect(url_for("login"))
+    return render_template("forgot_password.html")
+
+
+@app.route("/reset/<token>", methods=["GET", "POST"])
+def password_reset_token(token):
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    reset = PasswordResetToken.query.filter_by(token_hash=token_hash, used_at=None).first()
+    if not reset or reset.expires_at < datetime.utcnow():
+        flash("This reset link is invalid or has expired.")
+        return redirect(url_for("forgot_password"))
+
+    if request.method == "POST":
         new_password = request.form.get("new_password", "")
         confirm_password = request.form.get("confirm_password", "")
-        user = User.query.filter_by(email=email).first()
-        if not user:
-            flash("No account found with that email.")
-            return render_template("reset_password.html")
-        if not user.password_hash:
-            flash("This account uses Google sign-in. Set a password from your profile.")
-            return render_template("reset_password.html")
-        if not check_password_hash(user.password_hash, current_password):
-            flash("Current password is incorrect.")
-            return render_template("reset_password.html")
         if not new_password or new_password != confirm_password:
             flash("New passwords do not match.")
-            return render_template("reset_password.html")
-        user.password_hash = generate_password_hash(new_password)
+            return render_template("reset_token.html")
+        reset.user.password_hash = generate_password_hash(new_password)
+        reset.used_at = datetime.utcnow()
         db.session.commit()
         flash("Password updated. You can sign in now.")
         return redirect(url_for("login"))
-    return render_template("reset_password.html")
 
+    return render_template("reset_token.html")
 
 @app.route("/api/results", methods=["POST"])
 @login_required
