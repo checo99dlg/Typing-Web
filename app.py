@@ -88,7 +88,7 @@ def load_words(path: Path) -> list[str]:
     if not path.exists():
         return []
     words = [line.strip() for line in path.read_text(encoding="utf-8").splitlines()]
-    return [w for w in words if w]
+    return [w for w in words if len(w) > 2]
 
 
 WORDS_CACHE = load_words(WORDS_FILE)
