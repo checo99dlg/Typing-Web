@@ -194,7 +194,7 @@ def signup():
         db.session.add(user)
         db.session.commit()
         login_user(user)
-        return redirect(url_for("profile"))
+        return redirect(url_for("index"))
     return render_template("signup.html")
 
 
@@ -210,7 +210,7 @@ def login():
             flash("Invalid email or password.")
             return render_template("login.html")
         login_user(user)
-        return redirect(url_for("profile"))
+        return redirect(url_for("index"))
     return render_template("login.html")
 
 
