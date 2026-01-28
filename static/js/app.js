@@ -15,6 +15,7 @@ const caret = document.getElementById("caret");
 const capitalizeToggle = document.getElementById("capitalizeToggle");
 const languageToggle = document.getElementById("languageToggle");
 const accentToggle = document.getElementById("accentToggle");
+const punctuationToggle = document.getElementById("punctuationToggle");
 const resultsScreen = document.getElementById("resultsScreen");
 const resultWpm = document.getElementById("resultWpm");
 const resultRawWpm = document.getElementById("resultRawWpm");
@@ -46,6 +47,8 @@ const languageStorageKey = "typing-language";
 let currentLanguage = localStorage.getItem(languageStorageKey) || "en";
 const accentStorageKey = "typing-accents";
 let accentsEnabled = localStorage.getItem(accentStorageKey) !== "false";
+const punctuationStorageKey = "typing-punctuation";
+let punctuationEnabled = localStorage.getItem(punctuationStorageKey) === "true";
 
 function getPreferredTheme() {
   const storedTheme = localStorage.getItem(themeStorageKey);
@@ -103,6 +106,36 @@ function stripAccents(word) {
   return word.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
+function maybePunctuate(word) {
+  if (!punctuationEnabled || word.length === 0) {
+    return word;
+  }
+  if (Math.random() > 0.25) {
+    return word;
+  }
+  const wrappers = [
+    (w) => `(${w})`,
+    (w) => `"${w}"`,
+  ];
+  const suffixes = [",", ".", ";", ":", "!", "?", "..."];
+  const specials = [
+    (w) => `${w}'s`,
+    (w) => `${w}-${w}`,
+    (w) => `${w}—${w}`,
+  ];
+  const roll = Math.random();
+  if (roll < 0.2) {
+    const wrap = wrappers[Math.floor(Math.random() * wrappers.length)];
+    return wrap(word);
+  }
+  if (roll < 0.6) {
+    const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
+    return `${word}${suffix}`;
+  }
+  const special = specials[Math.floor(Math.random() * specials.length)];
+  return special(word);
+}
+
 function applyAccentToggle() {
   if (!accentToggle) {
     return;
@@ -116,6 +149,19 @@ function applyAccentToggle() {
   accentToggle.classList.toggle("dark:border-slate-200", !accentsEnabled && currentLanguage === "es");
   accentToggle.classList.toggle("opacity-40", currentLanguage !== "es");
   accentToggle.disabled = currentLanguage !== "es";
+}
+
+function applyPunctuationToggle() {
+  if (!punctuationToggle) {
+    return;
+  }
+  punctuationToggle.setAttribute("aria-pressed", String(punctuationEnabled));
+  punctuationToggle.classList.toggle("bg-slate-900", punctuationEnabled);
+  punctuationToggle.classList.toggle("text-white", punctuationEnabled);
+  punctuationToggle.classList.toggle("border-slate-900", punctuationEnabled);
+  punctuationToggle.classList.toggle("dark:bg-slate-200", punctuationEnabled);
+  punctuationToggle.classList.toggle("dark:text-slate-900", punctuationEnabled);
+  punctuationToggle.classList.toggle("dark:border-slate-200", punctuationEnabled);
 }
 
 function applyLanguageToggle() {
@@ -471,7 +517,8 @@ async function fetchWords({ replace = false } = {}) {
   const data = await response.json();
   const incoming = (data.words || [])
     .map((word) => (currentLanguage === "es" && !accentsEnabled ? stripAccents(word) : word))
-    .map((word) => maybeCapitalize(word));
+    .map((word) => maybeCapitalize(word))
+    .map((word) => maybePunctuate(word));
   if (replace || words.length === 0) {
     words = incoming;
   } else {
@@ -559,6 +606,18 @@ if (accentToggle) {
     accentsEnabled = !accentsEnabled;
     localStorage.setItem(accentStorageKey, String(accentsEnabled));
     applyAccentToggle();
+    await fetchWords({ replace: true });
+    resetStats();
+    textInput.focus();
+  });
+}
+
+if (punctuationToggle) {
+  applyPunctuationToggle();
+  punctuationToggle.addEventListener("click", async () => {
+    punctuationEnabled = !punctuationEnabled;
+    localStorage.setItem(punctuationStorageKey, String(punctuationEnabled));
+    applyPunctuationToggle();
     await fetchWords({ replace: true });
     resetStats();
     textInput.focus();
