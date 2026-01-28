@@ -469,6 +469,11 @@ def forgot_password():
     return render_template("forgot_password.html")
 
 
+@app.route("/reset-password")
+def reset_password_redirect():
+    return redirect(url_for("forgot_password"))
+
+
 @app.route("/reset/<token>", methods=["GET", "POST"])
 def password_reset_token(token):
     token_hash = hashlib.sha256(token.encode()).hexdigest()
