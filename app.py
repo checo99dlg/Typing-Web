@@ -260,7 +260,7 @@ def auth_google_callback():
     if not user.username:
         flash("Set a username to finish your profile.")
         return redirect(url_for("profile"))
-    return redirect(url_for("profile"))
+    return redirect(url_for("index"))
 
 
 def calculate_streaks(results):
