@@ -209,10 +209,19 @@
             <span class="text-sm font-semibold tracking-wide">Aa</span>
             <span class="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Caps</span>
           </button>
-          <button id="languageToggle" type="button" class="group relative z-10 inline-flex items-center gap-2 rounded-full border border-slate-400 bg-slate-300 px-4 py-2 text-slate-800 shadow-sm ring-1 ring-slate-300/60 transition hover:bg-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-600/60 dark:hover:bg-slate-700" aria-pressed="false" aria-label="Toggle language">
-            <span class="text-sm font-semibold tracking-wide">EN</span>
+          <label class="group relative z-10 inline-flex items-center gap-3 rounded-full border border-slate-400 bg-slate-300 px-4 py-2 text-slate-800 shadow-sm ring-1 ring-slate-300/60 transition hover:bg-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-600/60 dark:hover:bg-slate-700">
             <span class="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Lang</span>
-          </button>
+            <select id="languageToggle" class="appearance-none bg-transparent pr-5 text-sm font-semibold tracking-wide text-slate-900 focus:outline-none dark:text-slate-100" aria-label="Select language">
+              <option value="en">EN</option>
+              <option value="es">ES</option>
+              <option value="fr">FR</option>
+            </select>
+            <span class="pointer-events-none absolute right-3 flex h-4 w-4 items-center justify-center text-slate-500 dark:text-slate-400" aria-hidden="true">
+              <svg viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
+                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.19l3.71-3.96a.75.75 0 1 1 1.08 1.04l-4.24 4.52a.75.75 0 0 1-1.08 0L5.21 8.27a.75.75 0 0 1 .02-1.06Z" clip-rule="evenodd" />
+              </svg>
+            </span>
+          </label>
           <button id="accentToggle" type="button" class="group relative z-10 inline-flex items-center gap-2 rounded-full border border-slate-400 bg-slate-300 px-4 py-2 text-slate-800 shadow-sm ring-1 ring-slate-300/60 transition hover:bg-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-600/60 dark:hover:bg-slate-700" aria-pressed="false" aria-label="Toggle accents">
             <span class="text-sm font-semibold tracking-wide">Á</span>
             <span class="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Accents</span>
