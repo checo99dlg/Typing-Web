@@ -49,6 +49,11 @@ const accentStorageKey = "typing-accents";
 let accentsEnabled = localStorage.getItem(accentStorageKey) !== "false";
 const punctuationStorageKey = "typing-punctuation";
 let punctuationEnabled = localStorage.getItem(punctuationStorageKey) === "true";
+const supportedLanguages = ["en", "es", "fr"];
+const accentLanguages = new Set(["es", "fr"]);
+if (!supportedLanguages.includes(currentLanguage)) {
+  currentLanguage = "en";
+}
 
 function getPreferredTheme() {
   const storedTheme = localStorage.getItem(themeStorageKey);
@@ -140,15 +145,16 @@ function applyAccentToggle() {
   if (!accentToggle) {
     return;
   }
+  const isAccentLanguage = accentLanguages.has(currentLanguage);
   accentToggle.setAttribute("aria-pressed", String(accentsEnabled));
-  accentToggle.classList.toggle("bg-slate-900", !accentsEnabled && currentLanguage === "es");
-  accentToggle.classList.toggle("text-white", !accentsEnabled && currentLanguage === "es");
-  accentToggle.classList.toggle("border-slate-900", !accentsEnabled && currentLanguage === "es");
-  accentToggle.classList.toggle("dark:bg-slate-200", !accentsEnabled && currentLanguage === "es");
-  accentToggle.classList.toggle("dark:text-slate-900", !accentsEnabled && currentLanguage === "es");
-  accentToggle.classList.toggle("dark:border-slate-200", !accentsEnabled && currentLanguage === "es");
-  accentToggle.classList.toggle("opacity-40", currentLanguage !== "es");
-  accentToggle.disabled = currentLanguage !== "es";
+  accentToggle.classList.toggle("bg-slate-900", !accentsEnabled && isAccentLanguage);
+  accentToggle.classList.toggle("text-white", !accentsEnabled && isAccentLanguage);
+  accentToggle.classList.toggle("border-slate-900", !accentsEnabled && isAccentLanguage);
+  accentToggle.classList.toggle("dark:bg-slate-200", !accentsEnabled && isAccentLanguage);
+  accentToggle.classList.toggle("dark:text-slate-900", !accentsEnabled && isAccentLanguage);
+  accentToggle.classList.toggle("dark:border-slate-200", !accentsEnabled && isAccentLanguage);
+  accentToggle.classList.toggle("opacity-40", !isAccentLanguage);
+  accentToggle.disabled = !isAccentLanguage;
 }
 
 function applyPunctuationToggle() {
@@ -168,8 +174,15 @@ function applyLanguageToggle() {
   if (!languageToggle) {
     return;
   }
-  const label = currentLanguage === "es" ? "ES" : "EN";
-  languageToggle.querySelector("span").textContent = label;
+  if (languageToggle.tagName === "SELECT") {
+    languageToggle.value = currentLanguage;
+    return;
+  }
+  const label = currentLanguage === "es" ? "ES" : currentLanguage === "fr" ? "FR" : "EN";
+  const labelSpan = languageToggle.querySelector("span");
+  if (labelSpan) {
+    labelSpan.textContent = label;
+  }
 }
 
 function resetStats() {
@@ -513,10 +526,21 @@ function stopTest(showResults = false) {
 }
 
 async function fetchWords({ replace = false } = {}) {
-  const response = await fetch(`/api/words?count=200&lang=${encodeURIComponent(currentLanguage)}`);
-  const data = await response.json();
+  let data = null;
+  try {
+    const response = await fetch(`/api/words?count=200&lang=${encodeURIComponent(currentLanguage)}`);
+    if (!response.ok) {
+      throw new Error(`Words request failed: ${response.status}`);
+    }
+    data = await response.json();
+  } catch (error) {
+    console.error(error);
+    return;
+  }
   const incoming = (data.words || [])
-    .map((word) => (currentLanguage === "es" && !accentsEnabled ? stripAccents(word) : word))
+    .map((word) =>
+      accentLanguages.has(currentLanguage) && !accentsEnabled ? stripAccents(word) : word,
+    )
     .map((word) => maybeCapitalize(word))
     .map((word) => maybePunctuate(word));
   if (replace || words.length === 0) {
@@ -586,21 +610,40 @@ if (capitalizeToggle) {
 
 if (languageToggle) {
   applyLanguageToggle();
-  languageToggle.addEventListener("click", async () => {
-    currentLanguage = currentLanguage === "es" ? "en" : "es";
-    localStorage.setItem(languageStorageKey, currentLanguage);
-    applyLanguageToggle();
-    applyAccentToggle();
-    await fetchWords({ replace: true });
-    resetStats();
-    textInput.focus();
-  });
+  if (languageToggle.tagName === "SELECT") {
+    languageToggle.addEventListener("change", async (event) => {
+      const nextLanguage = event.target.value;
+      if (!supportedLanguages.includes(nextLanguage)) {
+        return;
+      }
+      currentLanguage = nextLanguage;
+      localStorage.setItem(languageStorageKey, currentLanguage);
+      applyLanguageToggle();
+      applyAccentToggle();
+      await fetchWords({ replace: true });
+      resetStats();
+      textInput.focus();
+    });
+  } else {
+    languageToggle.addEventListener("click", async () => {
+      const currentLangIndex = supportedLanguages.indexOf(currentLanguage);
+      const nextIndex =
+        currentLangIndex === -1 ? 0 : (currentLangIndex + 1) % supportedLanguages.length;
+      currentLanguage = supportedLanguages[nextIndex];
+      localStorage.setItem(languageStorageKey, currentLanguage);
+      applyLanguageToggle();
+      applyAccentToggle();
+      await fetchWords({ replace: true });
+      resetStats();
+      textInput.focus();
+    });
+  }
 }
 
 if (accentToggle) {
   applyAccentToggle();
   accentToggle.addEventListener("click", async () => {
-    if (currentLanguage !== "es") {
+    if (!accentLanguages.has(currentLanguage)) {
       return;
     }
     accentsEnabled = !accentsEnabled;
