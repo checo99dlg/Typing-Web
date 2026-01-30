@@ -49,8 +49,8 @@ const accentStorageKey = "typing-accents";
 let accentsEnabled = localStorage.getItem(accentStorageKey) !== "false";
 const punctuationStorageKey = "typing-punctuation";
 let punctuationEnabled = localStorage.getItem(punctuationStorageKey) === "true";
-const supportedLanguages = ["en", "es", "fr"];
-const accentLanguages = new Set(["es", "fr"]);
+const supportedLanguages = ["en", "es", "fr", "de", "pt"];
+const accentLanguages = new Set(["es", "fr", "de", "pt"]);
 if (!supportedLanguages.includes(currentLanguage)) {
   currentLanguage = "en";
 }
