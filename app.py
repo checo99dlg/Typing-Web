@@ -18,6 +18,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 APP_ROOT = Path(__file__).resolve().parent
 WORDS_FILE = APP_ROOT / "words.txt"
 WORDS_ES_FILE = APP_ROOT / "words_es.txt"
+WORDS_FR_FILE = APP_ROOT / "words-fr.txt"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret")
@@ -93,6 +94,7 @@ def load_words(path: Path) -> list[str]:
 
 WORDS_CACHE = load_words(WORDS_FILE)
 WORDS_ES_CACHE = load_words(WORDS_ES_FILE)
+WORDS_FR_CACHE = load_words(WORDS_FR_FILE)
 
 def ensure_sqlite_columns():
     if not app.config["SQLALCHEMY_DATABASE_URI"].startswith("sqlite"):
@@ -149,6 +151,8 @@ def api_words():
     lang = request.args.get("lang", default="en", type=str)
     if lang == "es":
         words = WORDS_ES_CACHE
+    elif lang == "fr":
+        words = WORDS_FR_CACHE
     else:
         words = WORDS_CACHE
     if not words:
