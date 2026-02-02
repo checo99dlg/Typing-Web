@@ -587,6 +587,12 @@ async function fetchWords({ replace = false } = {}) {
   } else {
     words = words.concat(incoming);
   }
+  if (replace) {
+    currentIndex = 0;
+    if (textInput) {
+      textInput.value = "";
+    }
+  }
   if (currentIndex >= words.length) {
     currentIndex = 0;
   }
