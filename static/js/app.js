@@ -39,6 +39,7 @@ let timerId = null;
 let timeLeft = 60;
 let infiniteMode = false;
 let wordResults = [];
+let typedWords = [];
 const wordsPerView = 36;
 const themeStorageKey = "typing-theme";
 const capitalizeStorageKey = "typing-capitalize";
@@ -178,11 +179,28 @@ function applyLanguageToggle() {
     languageToggle.value = currentLanguage;
     return;
   }
-  const label = currentLanguage === "es" ? "ES" : currentLanguage === "fr" ? "FR" : "EN";
+  const labels = { en: "EN", es: "ES", fr: "FR", de: "DE", pt: "PT" };
+  const label = labels[currentLanguage] || "EN";
   const labelSpan = languageToggle.querySelector("span");
   if (labelSpan) {
     labelSpan.textContent = label;
   }
+}
+
+async function setLanguage(nextLanguage) {
+  if (!supportedLanguages.includes(nextLanguage)) {
+    return;
+  }
+  if (nextLanguage === currentLanguage) {
+    return;
+  }
+  currentLanguage = nextLanguage;
+  localStorage.setItem(languageStorageKey, currentLanguage);
+  applyLanguageToggle();
+  applyAccentToggle();
+  await fetchWords({ replace: true });
+  resetStats();
+  textInput.focus();
 }
 
 function resetStats() {
@@ -195,6 +213,7 @@ function resetStats() {
   missedChars = 0;
   errors = 0;
   wordResults = [];
+  typedWords = [];
   startTime = null;
   timeLeft = getDuration();
   updateStats();
@@ -311,6 +330,43 @@ function getExpectedCharAt(position) {
   return null;
 }
 
+const correctTypedLetterClasses = ["text-[#008000]", "dark:text-[#008000]"];
+const incorrectTypedLetterClasses = ["text-rose-500", "dark:text-rose-400"];
+
+function resetLetterClasses(letterSpan) {
+  letterSpan.classList.remove(...correctTypedLetterClasses, ...incorrectTypedLetterClasses);
+}
+
+function applyTypingToWord({ wordSpan, typed, target }) {
+  const letterSpans = wordSpan.querySelectorAll("[data-letter]");
+  const overflowSpan = wordSpan.querySelector("[data-overflow]");
+  let hasMistake = false;
+
+  letterSpans.forEach((letterSpan, index) => {
+    resetLetterClasses(letterSpan);
+    if (index < typed.length) {
+      if (typed[index] === target[index]) {
+        letterSpan.classList.add(...correctTypedLetterClasses);
+      } else {
+        letterSpan.classList.add(...incorrectTypedLetterClasses);
+        hasMistake = true;
+      }
+    }
+  });
+
+  if (overflowSpan) {
+    resetLetterClasses(overflowSpan);
+    const overflow = typed.length > target.length ? typed.slice(target.length) : "";
+    overflowSpan.textContent = overflow;
+    if (overflow.length > 0) {
+      overflowSpan.classList.add(...incorrectTypedLetterClasses);
+      hasMistake = true;
+    }
+  }
+
+  return hasMistake;
+}
+
 function renderWords() {
   wordDisplay.innerHTML = "";
   const startIndex = currentIndex;
@@ -331,9 +387,7 @@ function renderWords() {
         "dark:outline-slate-500/70",
       );
     }
-    if (wordResults[index] === true) {
-      wordSpan.classList.add("text-slate-900", "dark:text-white");
-    } else if (wordResults[index] === false) {
+    if (wordResults[index] === false) {
       wordSpan.classList.add("text-rose-500", "dark:text-rose-400");
     }
     [...word].forEach((letter) => {
@@ -346,8 +400,13 @@ function renderWords() {
     overflowSpan.dataset.overflow = "true";
     wordSpan.appendChild(overflowSpan);
     wordDisplay.appendChild(wordSpan);
+
+    if (index < currentIndex) {
+      const typed = typedWords[index] || "";
+      applyTypingToWord({ wordSpan, typed, target: word });
+    }
   });
-  updateCaretPosition(textInput.value);
+  updateCurrentWordHighlight(textInput.value);
 }
 
 function nextWord(typed) {
@@ -362,6 +421,7 @@ function nextWord(typed) {
     errors += 1;
   }
   wordResults[currentIndex] = isCorrect;
+  typedWords[currentIndex] = typed;
   currentIndex += 1;
   if (currentIndex >= words.length - 5) {
     fetchWords();
@@ -380,34 +440,7 @@ function updateCurrentWordHighlight(value) {
   }
   const typed = value.trimEnd();
   const target = words[currentIndex] || "";
-  const letterSpans = wordSpan.querySelectorAll("[data-letter]");
-  let hasMistake = false;
-  letterSpans.forEach((letterSpan, index) => {
-    letterSpan.classList.remove(
-      "text-rose-500",
-      "dark:text-rose-400",
-      "text-slate-600",
-      "dark:text-slate-300",
-    );
-    if (index < typed.length) {
-      if (typed[index] === target[index]) {
-        letterSpan.classList.add("text-slate-600", "dark:text-slate-300");
-      } else {
-        hasMistake = true;
-        letterSpan.classList.add("text-rose-500", "dark:text-rose-400");
-      }
-    }
-  });
-  const overflowSpan = wordSpan.querySelector("[data-overflow]");
-  if (overflowSpan) {
-    const overflow = typed.length > target.length ? typed.slice(target.length) : "";
-    overflowSpan.textContent = overflow;
-    overflowSpan.classList.toggle("text-rose-500", overflow.length > 0);
-    overflowSpan.classList.toggle("dark:text-rose-400", overflow.length > 0);
-    if (overflow.length > 0) {
-      hasMistake = true;
-    }
-  }
+  const hasMistake = applyTypingToWord({ wordSpan, typed, target });
   wordSpan.classList.toggle("outline-rose-300/70", hasMistake);
   wordSpan.classList.toggle("dark:outline-rose-400/60", hasMistake);
   wordSpan.classList.toggle("outline-slate-400/70", !hasMistake);
@@ -467,14 +500,16 @@ function handleInput() {
   if (!isRunning && value.length > 0) {
     startTest();
   }
-  updateCurrentWordHighlight(value);
-  updateStats();
   if (value.endsWith(" ")) {
     const typed = value.trim();
-    nextWord(typed);
     textInput.value = "";
+    nextWord(typed);
     updateCaretPosition("");
+    updateStats();
+    return;
   }
+  updateCurrentWordHighlight(value);
+  updateStats();
 }
 
 function tick() {
@@ -611,31 +646,18 @@ if (capitalizeToggle) {
 if (languageToggle) {
   applyLanguageToggle();
   if (languageToggle.tagName === "SELECT") {
-    languageToggle.addEventListener("change", async (event) => {
-      const nextLanguage = event.target.value;
-      if (!supportedLanguages.includes(nextLanguage)) {
-        return;
-      }
-      currentLanguage = nextLanguage;
-      localStorage.setItem(languageStorageKey, currentLanguage);
-      applyLanguageToggle();
-      applyAccentToggle();
-      await fetchWords({ replace: true });
-      resetStats();
-      textInput.focus();
-    });
+    const handleLanguageInput = (event) => {
+      const nextLanguage = event.target?.value || languageToggle.value;
+      setLanguage(nextLanguage);
+    };
+    languageToggle.addEventListener("change", handleLanguageInput);
+    languageToggle.addEventListener("input", handleLanguageInput);
   } else {
     languageToggle.addEventListener("click", async () => {
       const currentLangIndex = supportedLanguages.indexOf(currentLanguage);
       const nextIndex =
         currentLangIndex === -1 ? 0 : (currentLangIndex + 1) % supportedLanguages.length;
-      currentLanguage = supportedLanguages[nextIndex];
-      localStorage.setItem(languageStorageKey, currentLanguage);
-      applyLanguageToggle();
-      applyAccentToggle();
-      await fetchWords({ replace: true });
-      resetStats();
-      textInput.focus();
+      await setLanguage(supportedLanguages[nextIndex]);
     });
   }
 }
