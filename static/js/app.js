@@ -17,6 +17,7 @@ const languageToggle = document.getElementById("languageToggle");
 const accentToggle = document.getElementById("accentToggle");
 const punctuationToggle = document.getElementById("punctuationToggle");
 const numbersToggle = document.getElementById("numbersToggle");
+const hardModeToggle = document.getElementById("hardModeToggle");
 const resultsScreen = document.getElementById("resultsScreen");
 const resultWpm = document.getElementById("resultWpm");
 const resultRawWpm = document.getElementById("resultRawWpm");
@@ -53,6 +54,8 @@ const punctuationStorageKey = "typing-punctuation";
 let punctuationEnabled = localStorage.getItem(punctuationStorageKey) === "true";
 const numbersStorageKey = "typing-numbers";
 let numbersEnabled = localStorage.getItem(numbersStorageKey) === "true";
+const hardModeStorageKey = "typing-hard-mode";
+let hardModeEnabled = localStorage.getItem(hardModeStorageKey) === "true";
 const supportedLanguages = ["en", "es", "fr", "de", "pt"];
 const accentLanguages = new Set(["es", "fr", "de", "pt"]);
 if (!supportedLanguages.includes(currentLanguage)) {
@@ -93,12 +96,11 @@ function applyCapitalizeToggle() {
     return;
   }
   capitalizeToggle.setAttribute("aria-pressed", String(capitalizeEnabled));
-  capitalizeToggle.classList.toggle("bg-slate-900", capitalizeEnabled);
-  capitalizeToggle.classList.toggle("text-white", capitalizeEnabled);
-  capitalizeToggle.classList.toggle("border-slate-900", capitalizeEnabled);
-  capitalizeToggle.classList.toggle("dark:bg-slate-200", capitalizeEnabled);
-  capitalizeToggle.classList.toggle("dark:text-slate-900", capitalizeEnabled);
-  capitalizeToggle.classList.toggle("dark:border-slate-200", capitalizeEnabled);
+  capitalizeToggle.classList.toggle("bg-emerald-500/20", capitalizeEnabled);
+  capitalizeToggle.classList.toggle("text-emerald-200", capitalizeEnabled);
+  capitalizeToggle.classList.toggle("border-emerald-400/60", capitalizeEnabled);
+  capitalizeToggle.classList.toggle("shadow-[0_0_14px_rgba(16,185,129,0.35)]", capitalizeEnabled);
+  capitalizeToggle.classList.toggle("opacity-50", !capitalizeEnabled);
 }
 
 function maybeCapitalize(word) {
@@ -164,16 +166,17 @@ function applyAccentToggle() {
   if (!accentToggle) {
     return;
   }
-  const isAccentLanguage = accentLanguages.has(currentLanguage);
+  const isEnabled = accentsEnabled;
   accentToggle.setAttribute("aria-pressed", String(accentsEnabled));
-  accentToggle.classList.toggle("bg-slate-900", !accentsEnabled && isAccentLanguage);
-  accentToggle.classList.toggle("text-white", !accentsEnabled && isAccentLanguage);
-  accentToggle.classList.toggle("border-slate-900", !accentsEnabled && isAccentLanguage);
-  accentToggle.classList.toggle("dark:bg-slate-200", !accentsEnabled && isAccentLanguage);
-  accentToggle.classList.toggle("dark:text-slate-900", !accentsEnabled && isAccentLanguage);
-  accentToggle.classList.toggle("dark:border-slate-200", !accentsEnabled && isAccentLanguage);
-  accentToggle.classList.toggle("opacity-40", !isAccentLanguage);
-  accentToggle.disabled = !isAccentLanguage;
+  accentToggle.classList.toggle("bg-emerald-500/20", isEnabled);
+  accentToggle.classList.toggle("text-emerald-200", isEnabled);
+  accentToggle.classList.toggle("border-emerald-400/60", isEnabled);
+  accentToggle.classList.toggle(
+    "shadow-[0_0_14px_rgba(16,185,129,0.35)]",
+    isEnabled,
+  );
+  accentToggle.classList.toggle("opacity-50", !accentsEnabled);
+  accentToggle.disabled = false;
 }
 
 function applyPunctuationToggle() {
@@ -181,12 +184,14 @@ function applyPunctuationToggle() {
     return;
   }
   punctuationToggle.setAttribute("aria-pressed", String(punctuationEnabled));
-  punctuationToggle.classList.toggle("bg-slate-900", punctuationEnabled);
-  punctuationToggle.classList.toggle("text-white", punctuationEnabled);
-  punctuationToggle.classList.toggle("border-slate-900", punctuationEnabled);
-  punctuationToggle.classList.toggle("dark:bg-slate-200", punctuationEnabled);
-  punctuationToggle.classList.toggle("dark:text-slate-900", punctuationEnabled);
-  punctuationToggle.classList.toggle("dark:border-slate-200", punctuationEnabled);
+  punctuationToggle.classList.toggle("bg-emerald-500/20", punctuationEnabled);
+  punctuationToggle.classList.toggle("text-emerald-200", punctuationEnabled);
+  punctuationToggle.classList.toggle("border-emerald-400/60", punctuationEnabled);
+  punctuationToggle.classList.toggle(
+    "shadow-[0_0_14px_rgba(16,185,129,0.35)]",
+    punctuationEnabled,
+  );
+  punctuationToggle.classList.toggle("opacity-50", !punctuationEnabled);
 }
 
 function applyNumbersToggle() {
@@ -194,12 +199,23 @@ function applyNumbersToggle() {
     return;
   }
   numbersToggle.setAttribute("aria-pressed", String(numbersEnabled));
-  numbersToggle.classList.toggle("bg-slate-900", numbersEnabled);
-  numbersToggle.classList.toggle("text-white", numbersEnabled);
-  numbersToggle.classList.toggle("border-slate-900", numbersEnabled);
-  numbersToggle.classList.toggle("dark:bg-slate-200", numbersEnabled);
-  numbersToggle.classList.toggle("dark:text-slate-900", numbersEnabled);
-  numbersToggle.classList.toggle("dark:border-slate-200", numbersEnabled);
+  numbersToggle.classList.toggle("bg-emerald-500/20", numbersEnabled);
+  numbersToggle.classList.toggle("text-emerald-200", numbersEnabled);
+  numbersToggle.classList.toggle("border-emerald-400/60", numbersEnabled);
+  numbersToggle.classList.toggle("shadow-[0_0_14px_rgba(16,185,129,0.35)]", numbersEnabled);
+  numbersToggle.classList.toggle("opacity-50", !numbersEnabled);
+}
+
+function applyHardModeToggle() {
+  if (!hardModeToggle) {
+    return;
+  }
+  hardModeToggle.setAttribute("aria-pressed", String(hardModeEnabled));
+  hardModeToggle.classList.toggle("bg-emerald-500/20", hardModeEnabled);
+  hardModeToggle.classList.toggle("text-emerald-200", hardModeEnabled);
+  hardModeToggle.classList.toggle("border-emerald-400/60", hardModeEnabled);
+  hardModeToggle.classList.toggle("shadow-[0_0_14px_rgba(16,185,129,0.35)]", hardModeEnabled);
+  hardModeToggle.classList.toggle("opacity-50", !hardModeEnabled);
 }
 
 function applyLanguageToggle() {
@@ -365,7 +381,7 @@ function getExpectedCharAt(position) {
   return null;
 }
 
-const correctTypedLetterClasses = ["text-[#008000]", "dark:text-[#008000]"];
+const correctTypedLetterClasses = ["text-[#076652]", "dark:text-[#076652]"];
 const incorrectTypedLetterClasses = ["text-rose-500", "dark:text-rose-400"];
 
 function resetLetterClasses(letterSpan) {
@@ -534,6 +550,26 @@ function handleInput() {
   const value = textInput.value;
   if (!isRunning && value.length > 0) {
     startTest();
+  }
+  if (hardModeEnabled) {
+    const typed = value.trimEnd();
+    const target = words[currentIndex] || "";
+    const max = Math.min(typed.length, target.length);
+    let hasMistake = typed.length > target.length;
+    for (let i = 0; i < max; i += 1) {
+      if (typed[i] !== target[i]) {
+        hasMistake = true;
+        break;
+      }
+    }
+    if (hasMistake) {
+      fetchWords({ replace: true }).then(() => {
+        hideResultsScreen();
+        resetStats();
+        textInput.focus();
+      });
+      return;
+    }
   }
   if (value.endsWith(" ")) {
     const typed = value.trim();
@@ -707,9 +743,6 @@ if (languageToggle) {
 if (accentToggle) {
   applyAccentToggle();
   accentToggle.addEventListener("click", async () => {
-    if (!accentLanguages.has(currentLanguage)) {
-      return;
-    }
     accentsEnabled = !accentsEnabled;
     localStorage.setItem(accentStorageKey, String(accentsEnabled));
     applyAccentToggle();
@@ -740,6 +773,15 @@ if (numbersToggle) {
     await fetchWords({ replace: true });
     resetStats();
     textInput.focus();
+  });
+}
+
+if (hardModeToggle) {
+  applyHardModeToggle();
+  hardModeToggle.addEventListener("click", () => {
+    hardModeEnabled = !hardModeEnabled;
+    localStorage.setItem(hardModeStorageKey, String(hardModeEnabled));
+    applyHardModeToggle();
   });
 }
 
