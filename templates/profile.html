@@ -163,7 +163,7 @@
         </div>
         {% if results %}
           <div class="mt-4 overflow-x-auto">
-            <table class="w-full min-w-[520px] text-left text-sm">
+            <table class="w-full min-w-[740px] text-left text-sm">
               <thead class="text-xs uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
                 <tr>
                   <th class="py-3">Date</th>
@@ -172,6 +172,10 @@
                   <th class="py-3">Accuracy</th>
                   <th class="py-3">Duration</th>
                   <th class="py-3">Chars</th>
+                  <th class="py-3">Lang</th>
+                  <th class="py-3">Caps</th>
+                  <th class="py-3">Accents</th>
+                  <th class="py-3">Punct</th>
                 </tr>
               </thead>
               <tbody class="text-slate-600 dark:text-slate-300">
@@ -183,6 +187,28 @@
                     <td class="py-3">{{ result.accuracy }}%</td>
                     <td class="py-3">{{ result.duration_seconds }}s</td>
                     <td class="py-3">{{ result.char_count }}</td>
+                    <td class="py-3">{{ result.language|upper if result.language else "—" }}</td>
+                    <td class="py-3">
+                      {% if result.caps_enabled is not none %}
+                        {{ "On" if result.caps_enabled else "Off" }}
+                      {% else %}
+                        —
+                      {% endif %}
+                    </td>
+                    <td class="py-3">
+                      {% if result.accents_enabled is not none %}
+                        {{ "On" if result.accents_enabled else "Off" }}
+                      {% else %}
+                        —
+                      {% endif %}
+                    </td>
+                    <td class="py-3">
+                      {% if result.punctuation_enabled is not none %}
+                        {{ "On" if result.punctuation_enabled else "Off" }}
+                      {% else %}
+                        —
+                      {% endif %}
+                    </td>
                   </tr>
                 {% endfor %}
               </tbody>

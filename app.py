@@ -74,6 +74,10 @@ class TestResult(db.Model):
     incorrect_chars = db.Column(db.Integer, nullable=False, default=0)
     extra_chars = db.Column(db.Integer, nullable=False, default=0)
     missed_chars = db.Column(db.Integer, nullable=False, default=0)
+    language = db.Column(db.String(8), nullable=True)
+    caps_enabled = db.Column(db.Boolean, nullable=True, default=False)
+    accents_enabled = db.Column(db.Boolean, nullable=True, default=False)
+    punctuation_enabled = db.Column(db.Boolean, nullable=True, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     user = db.relationship("User", backref=db.backref("results", lazy=True))
 
@@ -109,6 +113,10 @@ def ensure_sqlite_columns():
         "incorrect_chars": "INTEGER DEFAULT 0",
         "extra_chars": "INTEGER DEFAULT 0",
         "missed_chars": "INTEGER DEFAULT 0",
+        "language": "VARCHAR(8)",
+        "caps_enabled": "BOOLEAN DEFAULT 0",
+        "accents_enabled": "BOOLEAN DEFAULT 0",
+        "punctuation_enabled": "BOOLEAN DEFAULT 0",
     }
     existing = {
         row[1]
@@ -524,6 +532,10 @@ def api_results():
         incorrect_chars = int(payload.get("incorrectChars", 0))
         extra_chars = int(payload.get("extraChars", 0))
         missed_chars = int(payload.get("missedChars", 0))
+        language = (payload.get("language") or "").strip() or None
+        caps_enabled = bool(payload.get("capsEnabled"))
+        accents_enabled = bool(payload.get("accentsEnabled"))
+        punctuation_enabled = bool(payload.get("punctuationEnabled"))
         tz_name = (payload.get("timezone") or "").strip()
     except (TypeError, ValueError):
         return jsonify({"error": "Invalid payload"}), 400
@@ -540,6 +552,10 @@ def api_results():
         incorrect_chars=max(incorrect_chars, 0),
         extra_chars=max(extra_chars, 0),
         missed_chars=max(missed_chars, 0),
+        language=language,
+        caps_enabled=caps_enabled,
+        accents_enabled=accents_enabled,
+        punctuation_enabled=punctuation_enabled,
     )
     db.session.add(result)
     if tz_name:

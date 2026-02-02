@@ -277,6 +277,10 @@ function showResultsScreen() {
     incorrectChars,
     extraChars,
     missedChars,
+    language: currentLanguage,
+    capsEnabled: capitalizeEnabled,
+    accentsEnabled: accentsEnabled,
+    punctuationEnabled: punctuationEnabled,
     timezone,
   });
 }
