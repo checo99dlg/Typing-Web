@@ -26,6 +26,13 @@ const resultChars = document.getElementById("resultChars");
 const resultDuration = document.getElementById("resultDuration");
 const isAuthenticated = document.body.dataset.authenticated === "true";
 
+function focusTypingInput() {
+  if (!textInput || textInput.disabled) {
+    return;
+  }
+  textInput.focus({ preventScroll: true });
+}
+
 let words = [];
 let currentIndex = 0;
 let correctKeystrokes = 0;
@@ -515,7 +522,7 @@ function updateCaretPosition(value) {
   const overflowSpan = wordSpan.querySelector("[data-overflow]");
   const wordRect = wordSpan.getBoundingClientRect();
   const containerRect = wordDisplay.getBoundingClientRect();
-  const sectionRect = wordDisplay.parentElement.getBoundingClientRect();
+  const sectionRect = wordDisplay.closest("section")?.getBoundingClientRect() || containerRect;
   let anchorRect = wordRect;
   let caretX = wordRect.left;
   if (typed.length === 0) {
@@ -669,7 +676,7 @@ async function fetchWords({ replace = false } = {}) {
 }
 
 startBtn.addEventListener("click", () => {
-  textInput.focus();
+  focusTypingInput();
 });
 resetBtn.addEventListener("click", async () => {
   await fetchWords({ replace: true });
@@ -821,10 +828,17 @@ if (themeToggle) {
 
 fetchWords({ replace: true }).then(() => {
   resetStats();
-  textInput.focus();
+  focusTypingInput();
 });
 
 setUserTimezone();
+
+document.addEventListener("pointerdown", (event) => {
+  if (event.target.closest("button,select,a,input,textarea,label")) {
+    return;
+  }
+  focusTypingInput();
+});
 
 async function recordResult(payload) {
   if (!isAuthenticated) {
