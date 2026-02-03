@@ -25,6 +25,21 @@
       })();
     </script>
     <script>
+      (() => {
+        try {
+          const stored = localStorage.getItem("typing-color-theme-values");
+          if (!stored) {
+            return;
+          }
+          const colors = JSON.parse(stored);
+          const root = document.documentElement;
+          Object.entries(colors).forEach(([key, value]) => {
+            root.style.setProperty(`--app-${key}`, value);
+          });
+        } catch (error) {}
+      })();
+    </script>
+    <script>
       window.tailwind = { config: { darkMode: "class" } };
       tailwind = window.tailwind;
     </script>
@@ -49,6 +64,35 @@
         background-color: rgba(2, 6, 23, 0.6);
         border-color: #334155;
         color: #f8fafc;
+      }
+      :root {
+        --app-bg: #0b1220;
+        --app-surface: rgba(15, 23, 42, 0.9);
+        --app-surface-border: #1f2937;
+        --app-text: #f8fafc;
+        --app-muted: #94a3b8;
+        --app-word: #e2e8f0;
+        --app-pill-bg: rgba(15, 23, 42, 0.8);
+        --app-pill-border: #334155;
+        --app-pill-text: #cbd5f5;
+        --app-caret: #fbbf24;
+        --app-menu-bg: rgba(15, 23, 42, 0.96);
+        --app-correct: #076652;
+        --app-incorrect: #f87171;
+      }
+      html,
+      body {
+        background-color: var(--app-bg) !important;
+        color: var(--app-text);
+      }
+      .surface {
+        background-color: var(--app-surface) !important;
+        border-color: var(--app-surface-border) !important;
+      }
+      .surface-input {
+        background-color: color-mix(in srgb, var(--app-surface) 85%, #000) !important;
+        border-color: var(--app-surface-border) !important;
+        color: var(--app-text) !important;
       }
     </style>
     <script src="https://cdn.tailwindcss.com"></script>

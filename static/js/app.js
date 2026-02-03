@@ -283,6 +283,7 @@ function applyColorTheme(themeId) {
   root.style.setProperty("--app-correct", colors.correct);
   root.style.setProperty("--app-incorrect", colors.incorrect);
   root.style.setProperty("--app-menu-bg", colors.menuBg);
+  localStorage.setItem("typing-color-theme-values", JSON.stringify(colors));
   if (themeLabel) {
     themeLabel.textContent = theme.name;
   }
