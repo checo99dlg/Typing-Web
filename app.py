@@ -78,6 +78,7 @@ class TestResult(db.Model):
     caps_enabled = db.Column(db.Boolean, nullable=True, default=False)
     accents_enabled = db.Column(db.Boolean, nullable=True, default=False)
     punctuation_enabled = db.Column(db.Boolean, nullable=True, default=False)
+    hard_mode_enabled = db.Column(db.Boolean, nullable=True, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     user = db.relationship("User", backref=db.backref("results", lazy=True))
 
@@ -117,6 +118,7 @@ def ensure_sqlite_columns():
         "caps_enabled": "BOOLEAN DEFAULT 0",
         "accents_enabled": "BOOLEAN DEFAULT 0",
         "punctuation_enabled": "BOOLEAN DEFAULT 0",
+        "hard_mode_enabled": "BOOLEAN DEFAULT 0",
     }
     existing = {
         row[1]
@@ -536,6 +538,7 @@ def api_results():
         caps_enabled = bool(payload.get("capsEnabled"))
         accents_enabled = bool(payload.get("accentsEnabled"))
         punctuation_enabled = bool(payload.get("punctuationEnabled"))
+        hard_mode_enabled = bool(payload.get("hardModeEnabled"))
         tz_name = (payload.get("timezone") or "").strip()
     except (TypeError, ValueError):
         return jsonify({"error": "Invalid payload"}), 400
@@ -556,6 +559,7 @@ def api_results():
         caps_enabled=caps_enabled,
         accents_enabled=accents_enabled,
         punctuation_enabled=punctuation_enabled,
+        hard_mode_enabled=hard_mode_enabled,
     )
     db.session.add(result)
     if tz_name:

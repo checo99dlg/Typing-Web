@@ -328,6 +328,7 @@ function showResultsScreen() {
     capsEnabled: capitalizeEnabled,
     accentsEnabled: accentsEnabled,
     punctuationEnabled: punctuationEnabled,
+    hardModeEnabled: hardModeEnabled,
     timezone,
   });
 }
