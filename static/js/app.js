@@ -24,6 +24,9 @@ const resultRawWpm = document.getElementById("resultRawWpm");
 const resultAccuracy = document.getElementById("resultAccuracy");
 const resultChars = document.getElementById("resultChars");
 const resultDuration = document.getElementById("resultDuration");
+const themeMenuToggle = document.getElementById("themeMenuToggle");
+const themeMenu = document.getElementById("themeMenu");
+const themeLabel = document.getElementById("themeLabel");
 const isAuthenticated = document.body.dataset.authenticated === "true";
 
 function focusTypingInput() {
@@ -63,12 +66,247 @@ const numbersStorageKey = "typing-numbers";
 let numbersEnabled = localStorage.getItem(numbersStorageKey) === "true";
 const hardModeStorageKey = "typing-hard-mode";
 let hardModeEnabled = localStorage.getItem(hardModeStorageKey) === "true";
+const colorThemeStorageKey = "typing-color-theme";
 const supportedLanguages = ["en", "es", "fr", "de", "pt"];
 const accentLanguages = new Set(["es", "fr", "de", "pt"]);
 if (!supportedLanguages.includes(currentLanguage)) {
   currentLanguage = "en";
 }
 
+const colorThemes = [
+  {
+    id: "default",
+    name: "Default",
+    colors: {
+      bg: "#0b1220",
+      surface: "rgba(15, 23, 42, 0.9)",
+      surfaceBorder: "#1f2937",
+      text: "#f8fafc",
+      muted: "#94a3b8",
+      word: "#e2e8f0",
+      pillBg: "rgba(15, 23, 42, 0.8)",
+      pillBorder: "#334155",
+      pillText: "#cbd5f5",
+      caret: "#fbbf24",
+      correct: "#076652",
+      incorrect: "#f87171",
+      menuBg: "rgba(15, 23, 42, 0.96)",
+    },
+  },
+  {
+    id: "ocean",
+    name: "Ocean",
+    colors: {
+      bg: "#071629",
+      surface: "rgba(9, 30, 56, 0.9)",
+      surfaceBorder: "#1b3655",
+      text: "#e6f0ff",
+      muted: "#8aa4c6",
+      word: "#d8e6ff",
+      pillBg: "rgba(8, 26, 46, 0.85)",
+      pillBorder: "#2b4a74",
+      pillText: "#cfe0ff",
+      caret: "#22d3ee",
+      correct: "#60a5fa",
+      incorrect: "#fb7185",
+      menuBg: "rgba(9, 30, 56, 0.96)",
+    },
+  },
+  {
+    id: "forest",
+    name: "Forest",
+    colors: {
+      bg: "#0a1612",
+      surface: "rgba(11, 27, 20, 0.9)",
+      surfaceBorder: "#1b3a2c",
+      text: "#e7f7ef",
+      muted: "#8fb9a6",
+      word: "#d7efe4",
+      pillBg: "rgba(11, 27, 20, 0.85)",
+      pillBorder: "#2b5a45",
+      pillText: "#c9f0dc",
+      caret: "#86efac",
+      correct: "#34d399",
+      incorrect: "#f97316",
+      menuBg: "rgba(11, 27, 20, 0.96)",
+    },
+  },
+  {
+    id: "amber",
+    name: "Amber",
+    colors: {
+      bg: "#1b1404",
+      surface: "rgba(36, 26, 6, 0.9)",
+      surfaceBorder: "#5c3d09",
+      text: "#fff7e6",
+      muted: "#c9a467",
+      word: "#ffedc2",
+      pillBg: "rgba(36, 26, 6, 0.85)",
+      pillBorder: "#7a5414",
+      pillText: "#ffdf9e",
+      caret: "#fbbf24",
+      correct: "#facc15",
+      incorrect: "#ef4444",
+      menuBg: "rgba(36, 26, 6, 0.96)",
+    },
+  },
+  {
+    id: "sakura",
+    name: "Sakura",
+    colors: {
+      bg: "#1a1017",
+      surface: "rgba(30, 18, 27, 0.92)",
+      surfaceBorder: "#4a2a3b",
+      text: "#fbe9f1",
+      muted: "#c9a1b3",
+      word: "#f8d8e6",
+      pillBg: "rgba(30, 18, 27, 0.85)",
+      pillBorder: "#6a3d55",
+      pillText: "#f5c6da",
+      caret: "#fb7185",
+      correct: "#f9a8d4",
+      incorrect: "#fb7185",
+      menuBg: "rgba(30, 18, 27, 0.96)",
+    },
+  },
+  {
+    id: "lavender",
+    name: "Lavender",
+    colors: {
+      bg: "#14101f",
+      surface: "rgba(23, 18, 37, 0.9)",
+      surfaceBorder: "#3a2f56",
+      text: "#efe9ff",
+      muted: "#b3a6d1",
+      word: "#e1d8ff",
+      pillBg: "rgba(23, 18, 37, 0.85)",
+      pillBorder: "#58417e",
+      pillText: "#d6c8ff",
+      caret: "#c4b5fd",
+      correct: "#a78bfa",
+      incorrect: "#f87171",
+      menuBg: "rgba(23, 18, 37, 0.96)",
+    },
+  },
+  {
+    id: "arctic",
+    name: "Arctic",
+    colors: {
+      bg: "#081a1f",
+      surface: "rgba(10, 29, 35, 0.9)",
+      surfaceBorder: "#1b4b59",
+      text: "#e6fbff",
+      muted: "#93c5d1",
+      word: "#d2f6ff",
+      pillBg: "rgba(10, 29, 35, 0.85)",
+      pillBorder: "#2a6071",
+      pillText: "#c7f2ff",
+      caret: "#7dd3fc",
+      correct: "#38bdf8",
+      incorrect: "#f97316",
+      menuBg: "rgba(10, 29, 35, 0.96)",
+    },
+  },
+  {
+    id: "ember",
+    name: "Ember",
+    colors: {
+      bg: "#1b0c0c",
+      surface: "rgba(32, 12, 12, 0.92)",
+      surfaceBorder: "#4b1c1c",
+      text: "#ffe9e9",
+      muted: "#c78f8f",
+      word: "#ffd7d7",
+      pillBg: "rgba(32, 12, 12, 0.85)",
+      pillBorder: "#6b2c2c",
+      pillText: "#ffc2c2",
+      caret: "#fb7185",
+      correct: "#fca5a5",
+      incorrect: "#fb7185",
+      menuBg: "rgba(32, 12, 12, 0.96)",
+    },
+  },
+  {
+    id: "slate",
+    name: "Slate",
+    colors: {
+      bg: "#0f131a",
+      surface: "rgba(18, 23, 31, 0.9)",
+      surfaceBorder: "#2a3644",
+      text: "#edf2f7",
+      muted: "#9aa8bd",
+      word: "#e2e8f0",
+      pillBg: "rgba(18, 23, 31, 0.85)",
+      pillBorder: "#3b4a5f",
+      pillText: "#d6e1f2",
+      caret: "#cbd5e1",
+      correct: "#93c5fd",
+      incorrect: "#f87171",
+      menuBg: "rgba(18, 23, 31, 0.96)",
+    },
+  },
+  {
+    id: "mint",
+    name: "Mint",
+    colors: {
+      bg: "#0a1515",
+      surface: "rgba(10, 24, 24, 0.9)",
+      surfaceBorder: "#1e3d3d",
+      text: "#e6fff9",
+      muted: "#89bfb5",
+      word: "#d4fff3",
+      pillBg: "rgba(10, 24, 24, 0.85)",
+      pillBorder: "#2c5a5a",
+      pillText: "#c6fff0",
+      caret: "#5eead4",
+      correct: "#2dd4bf",
+      incorrect: "#fb7185",
+      menuBg: "rgba(10, 24, 24, 0.96)",
+    },
+  },
+];
+
+function applyColorTheme(themeId) {
+  const theme = colorThemes.find((item) => item.id === themeId) || colorThemes[0];
+  const root = document.documentElement;
+  const colors = theme.colors;
+  root.style.setProperty("--app-bg", colors.bg);
+  root.style.setProperty("--app-surface", colors.surface);
+  root.style.setProperty("--app-surface-border", colors.surfaceBorder);
+  root.style.setProperty("--app-text", colors.text);
+  root.style.setProperty("--app-muted", colors.muted);
+  root.style.setProperty("--app-word", colors.word);
+  root.style.setProperty("--app-pill-bg", colors.pillBg);
+  root.style.setProperty("--app-pill-border", colors.pillBorder);
+  root.style.setProperty("--app-pill-text", colors.pillText);
+  root.style.setProperty("--app-caret", colors.caret);
+  root.style.setProperty("--app-correct", colors.correct);
+  root.style.setProperty("--app-incorrect", colors.incorrect);
+  root.style.setProperty("--app-menu-bg", colors.menuBg);
+  if (themeLabel) {
+    themeLabel.textContent = theme.name;
+  }
+}
+
+function renderThemeMenu() {
+  if (!themeMenu) {
+    return;
+  }
+  themeMenu.innerHTML = "";
+  colorThemes.forEach((theme) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className =
+      "theme-item flex w-full items-center justify-between rounded-xl px-3 py-2 text-left transition";
+    button.textContent = theme.name;
+    button.addEventListener("click", () => {
+      localStorage.setItem(colorThemeStorageKey, theme.id);
+      applyColorTheme(theme.id);
+      themeMenu.classList.add("hidden");
+    });
+    themeMenu.appendChild(button);
+  });
+}
 function getPreferredTheme() {
   const storedTheme = localStorage.getItem(themeStorageKey);
   if (storedTheme === "dark" || storedTheme === "light") {
@@ -389,8 +627,8 @@ function getExpectedCharAt(position) {
   return null;
 }
 
-const correctTypedLetterClasses = ["text-[#076652]", "dark:text-[#076652]"];
-const incorrectTypedLetterClasses = ["text-rose-500", "dark:text-rose-400"];
+const correctTypedLetterClasses = ["typed-correct"];
+const incorrectTypedLetterClasses = ["typed-incorrect"];
 
 function resetLetterClasses(letterSpan) {
   letterSpan.classList.remove(...correctTypedLetterClasses, ...incorrectTypedLetterClasses);
@@ -810,10 +1048,16 @@ durationInput.addEventListener("change", () => {
 document.addEventListener("keydown", async (event) => {
   if (event.key === "Enter" && event.shiftKey) {
     event.preventDefault();
+    if (textInput) {
+      textInput.value = "";
+    }
+    typedWords = [];
+    wordResults = [];
+    currentIndex = 0;
     await fetchWords({ replace: true });
     hideResultsScreen();
     resetStats();
-    textInput.focus();
+    focusTypingInput();
   }
 });
 
@@ -826,6 +1070,24 @@ if (themeToggle) {
   });
 }
 
+if (themeMenuToggle) {
+  renderThemeMenu();
+  const storedTheme = localStorage.getItem(colorThemeStorageKey) || "default";
+  applyColorTheme(storedTheme);
+  themeMenuToggle.addEventListener("click", () => {
+    themeMenu?.classList.toggle("hidden");
+  });
+  document.addEventListener("click", (event) => {
+    if (!themeMenu || themeMenu.classList.contains("hidden")) {
+      return;
+    }
+    if (event.target.closest("#themeMenu") || event.target.closest("#themeMenuToggle")) {
+      return;
+    }
+    themeMenu.classList.add("hidden");
+  });
+}
+
 fetchWords({ replace: true }).then(() => {
   resetStats();
   focusTypingInput();
@@ -835,6 +1097,19 @@ setUserTimezone();
 
 document.addEventListener("pointerdown", (event) => {
   if (event.target.closest("button,select,a,input,textarea,label")) {
+    return;
+  }
+  focusTypingInput();
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.ctrlKey || event.metaKey || event.altKey) {
+    return;
+  }
+  if (event.key.length !== 1) {
+    return;
+  }
+  if (document.activeElement === textInput) {
     return;
   }
   focusTypingInput();

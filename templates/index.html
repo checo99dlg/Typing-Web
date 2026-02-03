@@ -56,6 +56,63 @@
         border-color: #334155;
         color: #f8fafc;
       }
+      :root {
+        --app-bg: #0b1220;
+        --app-surface: rgba(15, 23, 42, 0.9);
+        --app-surface-border: #1f2937;
+        --app-text: #f8fafc;
+        --app-muted: #94a3b8;
+        --app-word: #e2e8f0;
+        --app-pill-bg: rgba(15, 23, 42, 0.8);
+        --app-pill-border: #334155;
+        --app-pill-text: #cbd5f5;
+        --app-caret: #fbbf24;
+        --app-menu-bg: rgba(15, 23, 42, 0.96);
+        --app-correct: #076652;
+        --app-incorrect: #f87171;
+      }
+      html,
+      body {
+        background-color: var(--app-bg) !important;
+      }
+      body {
+        background-color: var(--app-bg);
+        color: var(--app-text);
+      }
+      .surface {
+        background-color: var(--app-surface) !important;
+        border-color: var(--app-surface-border) !important;
+      }
+      .surface-input {
+        background-color: color-mix(in srgb, var(--app-surface) 85%, #000);
+        border-color: var(--app-surface-border);
+        color: var(--app-text);
+      }
+      #wordDisplay {
+        color: var(--app-word);
+      }
+      #caret span {
+        background-color: var(--app-caret);
+      }
+      .typed-correct {
+        color: var(--app-correct);
+      }
+      .typed-incorrect {
+        color: var(--app-incorrect);
+      }
+      .theme-pill {
+        background-color: var(--app-pill-bg) !important;
+        border-color: var(--app-pill-border) !important;
+        color: var(--app-pill-text) !important;
+      }
+      .theme-menu {
+        background-color: var(--app-menu-bg);
+        border-color: var(--app-surface-border);
+        color: var(--app-text);
+      }
+      .theme-item:hover {
+        background-color: color-mix(in srgb, var(--app-pill-bg) 60%, transparent);
+      }
     </style>
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
@@ -205,11 +262,11 @@
 
       <section class="surface relative rounded-3xl border border-slate-200 bg-slate-100/90 p-10 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div class="mb-5 flex flex-wrap items-center justify-center gap-3">
-          <button id="capitalizeToggle" type="button" class="group relative z-10 inline-flex items-center gap-2 rounded-full border border-slate-400 bg-slate-300 px-4 py-2 text-slate-800 shadow-sm ring-1 ring-slate-300/60 transition hover:bg-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-600/60 dark:hover:bg-slate-700" aria-pressed="false" aria-label="Toggle randomized capitalization">
+          <button id="capitalizeToggle" type="button" class="theme-pill group relative z-10 inline-flex items-center gap-2 rounded-full border border-slate-400 bg-slate-300 px-4 py-2 text-slate-800 shadow-sm ring-1 ring-slate-300/60 transition hover:bg-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-600/60 dark:hover:bg-slate-700" aria-pressed="false" aria-label="Toggle randomized capitalization">
             <span class="text-sm font-semibold tracking-wide">Aa</span>
             <span class="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Caps</span>
           </button>
-          <label class="group relative z-10 inline-flex items-center gap-3 rounded-full border border-slate-400 bg-slate-300 px-4 py-2 text-slate-800 shadow-sm ring-1 ring-slate-300/60 transition hover:bg-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-600/60 dark:hover:bg-slate-700">
+          <label class="theme-pill group relative z-10 inline-flex items-center gap-3 rounded-full border border-slate-400 bg-slate-300 px-4 py-2 text-slate-800 shadow-sm ring-1 ring-slate-300/60 transition hover:bg-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-600/60 dark:hover:bg-slate-700">
             <span class="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Lang</span>
             <select id="languageToggle" class="appearance-none bg-transparent pr-5 text-sm font-semibold tracking-wide text-slate-900 focus:outline-none dark:text-slate-100" aria-label="Select language">
               <option value="en">EN</option>
@@ -224,19 +281,19 @@
               </svg>
             </span>
           </label>
-          <button id="accentToggle" type="button" class="group relative z-10 inline-flex items-center gap-2 rounded-full border border-slate-400 bg-slate-300 px-4 py-2 text-slate-800 shadow-sm ring-1 ring-slate-300/60 transition hover:bg-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-600/60 dark:hover:bg-slate-700" aria-pressed="false" aria-label="Toggle accents">
+          <button id="accentToggle" type="button" class="theme-pill group relative z-10 inline-flex items-center gap-2 rounded-full border border-slate-400 bg-slate-300 px-4 py-2 text-slate-800 shadow-sm ring-1 ring-slate-300/60 transition hover:bg-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-600/60 dark:hover:bg-slate-700" aria-pressed="false" aria-label="Toggle accents">
             <span class="text-sm font-semibold tracking-wide">Á</span>
             <span class="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Accents</span>
           </button>
-          <button id="punctuationToggle" type="button" class="group relative z-10 inline-flex items-center gap-2 rounded-full border border-slate-400 bg-slate-300 px-4 py-2 text-slate-800 shadow-sm ring-1 ring-slate-300/60 transition hover:bg-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-600/60 dark:hover:bg-slate-700" aria-pressed="false" aria-label="Toggle punctuation">
+          <button id="punctuationToggle" type="button" class="theme-pill group relative z-10 inline-flex items-center gap-2 rounded-full border border-slate-400 bg-slate-300 px-4 py-2 text-slate-800 shadow-sm ring-1 ring-slate-300/60 transition hover:bg-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-600/60 dark:hover:bg-slate-700" aria-pressed="false" aria-label="Toggle punctuation">
             <span class="text-sm font-semibold tracking-wide">.,;</span>
             <span class="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Punct</span>
           </button>
-          <button id="numbersToggle" type="button" class="group relative z-10 inline-flex items-center gap-2 rounded-full border border-slate-400 bg-slate-300 px-4 py-2 text-slate-800 shadow-sm ring-1 ring-slate-300/60 transition hover:bg-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-600/60 dark:hover:bg-slate-700" aria-pressed="false" aria-label="Toggle numbers">
+          <button id="numbersToggle" type="button" class="theme-pill group relative z-10 inline-flex items-center gap-2 rounded-full border border-slate-400 bg-slate-300 px-4 py-2 text-slate-800 shadow-sm ring-1 ring-slate-300/60 transition hover:bg-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-600/60 dark:hover:bg-slate-700" aria-pressed="false" aria-label="Toggle numbers">
             <span class="text-sm font-semibold tracking-wide">123</span>
             <span class="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Nums</span>
           </button>
-          <button id="hardModeToggle" type="button" class="group relative z-10 inline-flex items-center gap-2 rounded-full border border-slate-400 bg-slate-300 px-4 py-2 text-slate-800 shadow-sm ring-1 ring-slate-300/60 transition hover:bg-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-600/60 dark:hover:bg-slate-700" aria-pressed="false" aria-label="Toggle hard mode">
+          <button id="hardModeToggle" type="button" class="theme-pill group relative z-10 inline-flex items-center gap-2 rounded-full border border-slate-400 bg-slate-300 px-4 py-2 text-slate-800 shadow-sm ring-1 ring-slate-300/60 transition hover:bg-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-600/60 dark:hover:bg-slate-700" aria-pressed="false" aria-label="Toggle hard mode">
             <span class="text-sm font-semibold tracking-wide">!</span>
             <span class="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Hard</span>
           </button>
@@ -262,6 +319,16 @@
 
       <section class="text-sm text-slate-500 dark:text-slate-400">
         <p>Tip: Use Reset to fetch new words and restart your session.</p>
+      </section>
+      <section class="relative flex justify-center pb-6 text-xs uppercase tracking-[0.25em] text-slate-400 dark:text-slate-500">
+        <div class="relative">
+          <button id="themeMenuToggle" type="button" class="theme-pill inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[11px] font-semibold">
+            <span>Theme</span>
+            <span id="themeLabel">Default</span>
+          </button>
+          <div id="themeMenu" class="theme-menu absolute bottom-full left-1/2 z-20 hidden w-56 -translate-x-1/2 rounded-2xl border p-2 text-[11px] shadow-xl backdrop-blur">
+          </div>
+        </div>
       </section>
     </main>
 
