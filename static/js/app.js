@@ -49,7 +49,8 @@ let timeLeft = 60;
 let infiniteMode = false;
 let wordResults = [];
 let typedWords = [];
-const wordsPerView = 36;
+let windowStartIndex = 0;
+const wordsPerView = 18;
 const capitalizeStorageKey = "typing-capitalize";
 let capitalizeEnabled = localStorage.getItem(capitalizeStorageKey) === "true";
 const languageStorageKey = "typing-language";
@@ -494,6 +495,7 @@ function resetStats() {
   errors = 0;
   wordResults = [];
   typedWords = [];
+  windowStartIndex = 0;
   startTime = null;
   timeLeft = getDuration();
   updateStats();
@@ -653,8 +655,8 @@ function applyTypingToWord({ wordSpan, typed, target }) {
 }
 
 function renderWords() {
+  const startIndex = Math.max(0, Math.min(windowStartIndex, currentIndex));
   wordDisplay.innerHTML = "";
-  const startIndex = currentIndex;
   const endIndex = Math.min(startIndex + wordsPerView, words.length);
   words.slice(startIndex, endIndex).forEach((word, offset) => {
     const index = startIndex + offset;
@@ -691,6 +693,26 @@ function renderWords() {
       applyTypingToWord({ wordSpan, typed, target: word });
     }
   });
+
+  const lineStarts = [];
+  let lastTop = null;
+  const wordSpans = wordDisplay.querySelectorAll("[data-index]");
+  wordSpans.forEach((span) => {
+    const top = span.offsetTop;
+    if (lastTop === null || top > lastTop) {
+      lineStarts.push(Number(span.dataset.index));
+      lastTop = top;
+    }
+  });
+
+  if (lineStarts.length >= 3 && currentIndex >= lineStarts[2]) {
+    windowStartIndex = lineStarts[1];
+    if (windowStartIndex !== startIndex) {
+      renderWords();
+      return;
+    }
+  }
+
   updateCurrentWordHighlight(textInput.value);
 }
 
