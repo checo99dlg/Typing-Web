@@ -8,9 +8,6 @@ const durationInput = document.getElementById("durationInput");
 const infiniteToggle = document.getElementById("infiniteToggle");
 const startBtn = document.getElementById("startBtn");
 const resetBtn = document.getElementById("resetBtn");
-const themeToggle = document.getElementById("themeToggle");
-const themeIconSun = document.getElementById("themeIconSun");
-const themeIconMoon = document.getElementById("themeIconMoon");
 const caret = document.getElementById("caret");
 const capitalizeToggle = document.getElementById("capitalizeToggle");
 const languageToggle = document.getElementById("languageToggle");
@@ -53,7 +50,6 @@ let infiniteMode = false;
 let wordResults = [];
 let typedWords = [];
 const wordsPerView = 36;
-const themeStorageKey = "typing-theme";
 const capitalizeStorageKey = "typing-capitalize";
 let capitalizeEnabled = localStorage.getItem(capitalizeStorageKey) === "true";
 const languageStorageKey = "typing-language";
@@ -264,6 +260,25 @@ const colorThemes = [
       menuBg: "rgba(10, 24, 24, 0.96)",
     },
   },
+  {
+    id: "honey",
+    name: "Honey",
+    colors: {
+      bg: "#1a1203",
+      surface: "rgba(36, 24, 4, 0.9)",
+      surfaceBorder: "#6b4c12",
+      text: "#fff7cc",
+      muted: "#d6b874",
+      word: "#ffe9a3",
+      pillBg: "rgba(36, 24, 4, 0.85)",
+      pillBorder: "#8a6218",
+      pillText: "#ffdf8a",
+      caret: "#fbbf24",
+      correct: "#fde047",
+      incorrect: "#f97316",
+      menuBg: "rgba(36, 24, 4, 0.96)",
+    },
+  },
 ];
 
 function applyColorTheme(themeId) {
@@ -307,34 +322,6 @@ function renderThemeMenu() {
     });
     themeMenu.appendChild(button);
   });
-}
-function getPreferredTheme() {
-  const storedTheme = localStorage.getItem(themeStorageKey);
-  if (storedTheme === "dark" || storedTheme === "light") {
-    return storedTheme;
-  }
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-}
-
-function applyTheme(theme) {
-  const root = document.documentElement;
-  root.classList.toggle("dark", theme === "dark");
-  document.body.classList.toggle("dark", theme === "dark");
-  if (themeToggle) {
-    const isDark = theme === "dark";
-    themeToggle.setAttribute("aria-pressed", String(isDark));
-    themeToggle.setAttribute("aria-label", isDark ? "Switch to light mode" : "Switch to dark mode");
-    themeToggle.classList.add("is-toggling");
-    window.setTimeout(() => themeToggle.classList.remove("is-toggling"), 220);
-    if (themeIconSun && themeIconMoon) {
-      themeIconSun.classList.toggle("rotate-90", isDark);
-      themeIconSun.classList.toggle("scale-0", isDark);
-      themeIconSun.classList.toggle("opacity-0", isDark);
-      themeIconMoon.classList.toggle("rotate-90", !isDark);
-      themeIconMoon.classList.toggle("scale-0", !isDark);
-      themeIconMoon.classList.toggle("opacity-0", !isDark);
-    }
-  }
 }
 
 function applyCapitalizeToggle() {
@@ -1061,15 +1048,6 @@ document.addEventListener("keydown", async (event) => {
     focusTypingInput();
   }
 }, { capture: true });
-
-if (themeToggle) {
-  applyTheme(getPreferredTheme());
-  themeToggle.addEventListener("click", () => {
-    const nextTheme = document.documentElement.classList.contains("dark") ? "light" : "dark";
-    localStorage.setItem(themeStorageKey, nextTheme);
-    applyTheme(nextTheme);
-  });
-}
 
 if (themeMenuToggle) {
   renderThemeMenu();

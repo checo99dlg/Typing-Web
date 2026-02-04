@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -9,22 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <script>
-      (() => {
-        try {
-          const storedTheme = localStorage.getItem("typing-theme");
-          const theme =
-            storedTheme === "dark" || storedTheme === "light"
-              ? storedTheme
-              : window.matchMedia("(prefers-color-scheme: dark)").matches
-                ? "dark"
-                : "light";
-          if (theme === "dark") {
-            document.documentElement.classList.add("dark");
-          }
-        } catch (error) {
-          // Ignore storage access issues and keep default theme.
-        }
-      })();
+      document.documentElement.classList.add("dark");
     </script>
     <script>
       window.tailwind = {
@@ -194,23 +179,6 @@
       </div>
       <header class="surface flex flex-col gap-7 rounded-3xl border border-slate-200 bg-slate-100/90 p-10 shadow-sm md:flex-row md:items-center md:justify-between dark:border-slate-800 dark:bg-slate-900">
         <div class="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
-          <button id="themeToggle" type="button" class="group relative inline-flex h-12 w-12 items-center justify-center rounded-full border border-slate-300 text-slate-700 shadow-sm transition hover:bg-slate-300 active:scale-95 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 font-semibold" aria-pressed="false" aria-label="Toggle dark mode">
-            <span class="sr-only">Toggle dark mode</span>
-            <svg id="themeIconSun" class="h-5 w-5 transition-all duration-300 group-[.is-toggling]:scale-110 group-[.is-toggling]:rotate-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-              <circle cx="12" cy="12" r="4"></circle>
-              <path d="M12 2v2"></path>
-              <path d="M12 20v2"></path>
-              <path d="M4.93 4.93l1.41 1.41"></path>
-              <path d="M17.66 17.66l1.41 1.41"></path>
-              <path d="M2 12h2"></path>
-              <path d="M20 12h2"></path>
-              <path d="M4.93 19.07l1.41-1.41"></path>
-              <path d="M17.66 6.34l1.41-1.41"></path>
-            </svg>
-            <svg id="themeIconMoon" class="absolute h-5 w-5 rotate-90 scale-0 opacity-0 transition-all duration-300 group-[.is-toggling]:scale-110 group-[.is-toggling]:-rotate-12 text-slate-800 dark:text-slate-200" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M21 14.5A8.5 8.5 0 0 1 9.5 3a7 7 0 1 0 11.5 11.5Z"></path>
-            </svg>
-          </button>
           <div>
             <h1 class="text-4xl font-semibold tracking-tight">ChecoType</h1>
             <p class="mt-3 max-w-xl text-base text-slate-600 dark:text-slate-300">Randomized word tests with live accuracy and WPM tracking.</p>
