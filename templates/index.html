@@ -141,6 +141,13 @@
       .result-help {
         color: var(--app-muted) !important;
       }
+      .stat-card {
+        background-color: color-mix(in srgb, var(--app-surface) 85%, #000) !important;
+        border-color: color-mix(in srgb, var(--app-surface-border) 80%, transparent) !important;
+      }
+      .stat-label {
+        color: var(--app-muted) !important;
+      }
     </style>
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
@@ -236,20 +243,20 @@
       </header>
 
       <section class="grid gap-5 md:grid-cols-4">
-        <div class="surface rounded-2xl border border-slate-200 bg-slate-100/90 p-5 dark:border-slate-800 dark:bg-slate-900">
-          <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Time</p>
+        <div class="surface stat-card rounded-2xl border border-slate-200 bg-slate-100/90 p-5 dark:border-slate-800 dark:bg-slate-900">
+          <p class="stat-label text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Time</p>
           <p id="timeDisplay" class="mt-2 text-3xl font-semibold">60</p>
         </div>
-        <div class="surface rounded-2xl border border-slate-200 bg-slate-100/90 p-5 dark:border-slate-800 dark:bg-slate-900">
-          <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">WPM</p>
+        <div class="surface stat-card rounded-2xl border border-slate-200 bg-slate-100/90 p-5 dark:border-slate-800 dark:bg-slate-900">
+          <p class="stat-label text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">WPM</p>
           <p id="wpmDisplay" class="mt-2 text-3xl font-semibold">0</p>
         </div>
-        <div class="surface rounded-2xl border border-slate-200 bg-slate-100/90 p-5 dark:border-slate-800 dark:bg-slate-900">
-          <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Accuracy</p>
+        <div class="surface stat-card rounded-2xl border border-slate-200 bg-slate-100/90 p-5 dark:border-slate-800 dark:bg-slate-900">
+          <p class="stat-label text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Accuracy</p>
           <p id="accuracyDisplay" class="mt-2 text-3xl font-semibold">100%</p>
         </div>
-        <div class="surface rounded-2xl border border-slate-200 bg-slate-100/90 p-5 dark:border-slate-800 dark:bg-slate-900">
-          <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Errors</p>
+        <div class="surface stat-card rounded-2xl border border-slate-200 bg-slate-100/90 p-5 dark:border-slate-800 dark:bg-slate-900">
+          <p class="stat-label text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Errors</p>
           <p id="errorDisplay" class="mt-2 text-3xl font-semibold">0</p>
         </div>
       </section>
