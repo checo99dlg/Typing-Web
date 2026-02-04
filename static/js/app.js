@@ -1060,7 +1060,7 @@ document.addEventListener("keydown", async (event) => {
     resetStats();
     focusTypingInput();
   }
-});
+}, { capture: true });
 
 if (themeToggle) {
   applyTheme(getPreferredTheme());
@@ -1110,7 +1110,13 @@ document.addEventListener("keydown", (event) => {
   if (event.key.length !== 1) {
     return;
   }
-  if (document.activeElement === textInput) {
+  const active = document.activeElement;
+  if (
+    active === textInput ||
+    active?.tagName === "INPUT" ||
+    active?.tagName === "TEXTAREA" ||
+    active?.tagName === "SELECT"
+  ) {
     return;
   }
   focusTypingInput();
