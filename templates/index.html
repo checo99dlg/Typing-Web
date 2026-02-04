@@ -166,6 +166,21 @@
         border-color: var(--app-surface-border) !important;
         color: var(--app-word) !important;
       }
+      .records-card {
+        background-color: color-mix(in srgb, var(--app-surface) 85%, #000) !important;
+        border-color: color-mix(in srgb, var(--app-surface-border) 80%, transparent) !important;
+      }
+      .records-label {
+        color: var(--app-word) !important;
+        opacity: 0.7;
+      }
+      .records-title,
+      .records-value {
+        color: var(--app-word) !important;
+      }
+      .records-sub {
+        color: var(--app-muted) !important;
+      }
     </style>
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
@@ -266,31 +281,33 @@
       <section class="surface rounded-3xl border border-slate-200 bg-slate-100/90 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div class="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p class="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500">My Records</p>
-            <h2 class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">Keep pushing your personal bests</h2>
+            <p class="records-label text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500">My Records</p>
+            <h2 class="records-title mt-2 text-2xl font-semibold text-slate-900 dark:text-white">Keep pushing your personal bests</h2>
           </div>
-          <a href="{{ url_for('profile') }}" class="rounded-full border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-300 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">View profile</a>
+          <a href="{{ url_for('profile') }}" class="header-btn rounded-full border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-300 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">View profile</a>
         </div>
         <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          <div class="rounded-2xl border border-slate-200 bg-white/80 p-4 dark:border-slate-800 dark:bg-slate-950/40">
-            <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Fastest WPM</p>
-            <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ summary.fastest_wpm }}</p>
+          <div class="records-card rounded-2xl border border-slate-200 bg-white/80 p-4 dark:border-slate-800 dark:bg-slate-950/40">
+            <p class="records-label text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Fastest WPM</p>
+            <p class="records-value mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ summary.fastest_wpm }}</p>
           </div>
-          <div class="rounded-2xl border border-slate-200 bg-white/80 p-4 dark:border-slate-800 dark:bg-slate-950/40">
-            <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Fastest Raw WPM</p>
-            <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ summary.fastest_raw_wpm }}</p>
+          <div class="records-card rounded-2xl border border-slate-200 bg-white/80 p-4 dark:border-slate-800 dark:bg-slate-950/40">
+            <p class="records-label text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Fastest Raw WPM</p>
+            <p class="records-value mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ summary.fastest_raw_wpm }}</p>
           </div>
-          <div class="rounded-2xl border border-slate-200 bg-white/80 p-4 dark:border-slate-800 dark:bg-slate-950/40">
-            <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Best Accuracy</p>
-            <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ summary.best_accuracy }}%</p>
+          <div class="records-card rounded-2xl border border-slate-200 bg-white/80 p-4 dark:border-slate-800 dark:bg-slate-950/40">
+            <p class="records-label text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Best Accuracy</p>
+            <p class="records-value mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ summary.best_accuracy }}%</p>
           </div>
-          <div class="rounded-2xl border border-slate-200 bg-white/80 p-4 dark:border-slate-800 dark:bg-slate-950/40">
-            <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Avg WPM</p>
-            <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ summary.avg_wpm }}</p>
+          <div class="records-card rounded-2xl border border-slate-200 bg-white/80 p-4 dark:border-slate-800 dark:bg-slate-950/40">
+            <p class="records-label text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Avg WPM</p>
+            <p class="records-value mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ summary.avg_wpm }}</p>
           </div>
-          <div class="rounded-2xl border border-slate-200 bg-white/80 p-4 dark:border-slate-800 dark:bg-slate-950/40">
-            <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Streak</p>
-            <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ summary.current_streak }} <span class="text-base font-medium text-slate-500">/ {{ summary.longest_streak }}</span></p>
+          <div class="records-card rounded-2xl border border-slate-200 bg-white/80 p-4 dark:border-slate-800 dark:bg-slate-950/40">
+            <p class="records-label text-[11px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Streak</p>
+            <p class="records-value mt-2 text-2xl font-semibold text-slate-900 dark:text-white">
+              {{ summary.current_streak }} <span class="records-sub text-base font-medium text-slate-500">/ {{ summary.longest_streak }}</span>
+            </p>
           </div>
         </div>
       </section>
